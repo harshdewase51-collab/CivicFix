@@ -5,10 +5,15 @@
   "description": "CivicFix — Hackathon civic issue reporting and tracking platform",
   "scripts": {
     "dev:server": "npm --prefix server run dev",
-    "dev:client": "npm --prefix client run dev",
-    "build:client": "npm --prefix client run build",
+    "dev:frontend": "npm --prefix frontend run dev",
+    "build:frontend": "npm --prefix frontend run build",
+    "build": "npm --prefix frontend run build",
     "db:migrate": "npm --prefix server run db:migrate",
-    "db:seed": "npm --prefix server run db:seed"
+    "db:seed": "npm --prefix server run db:seed",
+    "seed:admin": "npm --prefix server run db:seed",
+    "test:backend": "node server/src/scripts/verify-backend.js",
+    "test:e2e": "node server/src/scripts/test-complete-17-steps.js",
+    "install:all": "npm --prefix server install && npm --prefix client install && npm --prefix frontend install"
   },
   "keywords": ["civic-tech", "react", "express", "postgresql", "hackathon"],
   "author": "CivicFix Team",
