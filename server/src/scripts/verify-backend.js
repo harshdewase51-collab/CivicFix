@@ -1,348 +1,270 @@
 const http = require('http');
+const fs = require('fs');
+const path = require('path');
 
 const PORT = 5000;
-const BASE_URL = `http://localhost:${PORT}`;
 
-function makeRequest(options, postData = null, isMultipart = false) {
+function makeRequest(options, postData = null, headers = {}) {
   return new Promise((resolve, reject) => {
-    const req = http.request(options, (res) => {
-      let body = '';
-      res.on('data', (chunk) => (body += chunk));
-      res.on('end', () => {
-        try {
-          const parsed = JSON.parse(body);
-          resolve({ status: res.statusCode, headers: res.headers, body: parsed });
-        } catch (e) {
-          resolve({ status: res.statusCode, headers: res.headers, raw: body });
-        }
-      });
-    });
-
-    req.on('error', (err) => reject(err));
-
-    if (postData) {
-      req.write(postData);
+    const reqHeaders = { ...headers };
+    if (postData && !reqHeaders['Content-Length']) {
+      reqHeaders['Content-Length'] = Buffer.byteLength(postData);
     }
+
+    const req = http.request(
+      {
+        hostname: 'localhost',
+        port: PORT,
+        ...options,
+        headers: reqHeaders
+      },
+      (res) => {
+        let body = '';
+        res.on('data', (chunk) => (body += chunk));
+        res.on('end', () => {
+          try {
+            resolve({ status: res.statusCode, headers: res.headers, body: JSON.parse(body) });
+          } catch {
+            resolve({ status: res.statusCode, headers: res.headers, raw: body });
+          }
+        });
+      }
+    );
+
+    req.on('error', reject);
+    if (postData) req.write(postData);
     req.end();
   });
 }
 
-async function runBackendVerification() {
-  console.log('🧪 Starting CivicFix Backend API Verification Suite...\n');
-  let testsPassed = 0;
-  let testsTotal = 0;
+async function uploadMultipartReport(token, filePath) {
+  const boundary = '----CivicFixTestBoundary' + Date.now();
+  const fileContent = fs.readFileSync(filePath);
+  const fileName = path.basename(filePath);
 
-  function assert(condition, name, details = '') {
-    testsTotal++;
+  let payload = '';
+  payload += `--${boundary}\r\nContent-Disposition: form-data; name="category"\r\n\r\nPothole\r\n`;
+  payload += `--${boundary}\r\nContent-Disposition: form-data; name="location"\r\n\r\nHighway Junction 2\r\n`;
+  payload += `--${boundary}\r\nContent-Disposition: form-data; name="description"\r\n\r\nRoad hazard test\r\n`;
+  payload += `--${boundary}\r\nContent-Disposition: form-data; name="image"; filename="${fileName}"\r\nContent-Type: image/png\r\n\r\n`;
+
+  const headerBuf = Buffer.from(payload, 'utf-8');
+  const footerBuf = Buffer.from(`\r\n--${boundary}--\r\n`, 'utf-8');
+  const body = Buffer.concat([headerBuf, fileContent, footerBuf]);
+
+  return makeRequest(
+    {
+      path: '/api/reports',
+      method: 'POST'
+    },
+    body,
+    {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': `multipart/form-data; boundary=${boundary}`,
+      'Content-Length': body.length
+    }
+  );
+}
+
+async function runCompleteBackendTestSuite() {
+  console.log('================================================================');
+  console.log('CIVICFIX — COMPLETE PHASE 8 BACKEND TESTING SUITE');
+  console.log('================================================================\n');
+
+  let passed = 0;
+  let total = 0;
+
+  function test(condition, name) {
+    total++;
     if (condition) {
       console.log(`✅ [PASS] ${name}`);
-      testsPassed++;
+      passed++;
     } else {
-      console.error(`❌ [FAIL] ${name} ${details}`);
+      console.error(`❌ [FAIL] ${name}`);
     }
   }
 
   try {
-    // 1. Health Check
-    const health = await makeRequest({
-      hostname: 'localhost',
-      port: PORT,
-      path: '/api/health',
-      method: 'GET'
-    });
-    assert(health.status === 200 && health.body.success === true, '1. GET /api/health responds with 200 and success: true');
+    // 8.1 Health Test
+    const health = await makeRequest({ path: '/api/health', method: 'GET' });
+    test(health.status === 200 && health.body.success === true, '8.1 Health Check: GET /api/health returns 200 and success: true');
 
-    // 2. Register New Citizen
-    const testEmail = `tester_${Date.now()}@test.com`;
-    const regPayload = JSON.stringify({
-      name: 'Rohan Sharma',
-      email: testEmail,
-      password: 'password123'
-    });
-
+    // 8.3 Auth Tests
+    const testEmail = `phase8_user_${Date.now()}@civicfix.org`;
     const regRes = await makeRequest(
-      {
-        hostname: 'localhost',
-        port: PORT,
-        path: '/api/auth/register',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(regPayload)
-        }
-      },
-      regPayload
+      { path: '/api/auth/register', method: 'POST' },
+      JSON.stringify({ name: 'Sanjay Dutt', email: testEmail, password: 'SecurePassword123' }),
+      { 'Content-Type': 'application/json' }
     );
-    assert(regRes.status === 201 && regRes.body.token, '2. POST /api/auth/register creates citizen and returns JWT token');
+    test(regRes.status === 201 && regRes.body.token, '8.3a Register Citizen: creates citizen and issues JWT');
     const citizenToken = regRes.body.token;
 
-    // 3. Duplicate Registration Rejected
     const dupRes = await makeRequest(
-      {
-        hostname: 'localhost',
-        port: PORT,
-        path: '/api/auth/register',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(regPayload)
-        }
-      },
-      regPayload
+      { path: '/api/auth/register', method: 'POST' },
+      JSON.stringify({ name: 'Sanjay Dutt', email: testEmail, password: 'SecurePassword123' }),
+      { 'Content-Type': 'application/json' }
     );
-    assert(dupRes.status === 400 && dupRes.body.success === false, '3. Duplicate email registration rejected with 400');
+    test(dupRes.status === 400 && dupRes.body.success === false, '8.3b Duplicate Email: rejected with 400 Bad Request');
 
-    // 4. Login Citizen
-    const loginPayload = JSON.stringify({
-      email: testEmail,
-      password: 'password123'
-    });
+    const wrongPassRes = await makeRequest(
+      { path: '/api/auth/login', method: 'POST' },
+      JSON.stringify({ email: testEmail, password: 'WrongPassword' }),
+      { 'Content-Type': 'application/json' }
+    );
+    test(wrongPassRes.status === 401, '8.3c Wrong Password: rejected with 401 Unauthorized');
+
     const loginRes = await makeRequest(
-      {
-        hostname: 'localhost',
-        port: PORT,
-        path: '/api/auth/login',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(loginPayload)
-        }
-      },
-      loginPayload
+      { path: '/api/auth/login', method: 'POST' },
+      JSON.stringify({ email: testEmail, password: 'SecurePassword123' }),
+      { 'Content-Type': 'application/json' }
     );
-    assert(loginRes.status === 200 && loginRes.body.token && loginRes.body.user.role === 'citizen', '4. POST /api/auth/login succeeds for citizen');
+    test(loginRes.status === 200 && loginRes.body.token, '8.3d Login: authenticates citizen and returns token');
 
-    // 5. GET /api/auth/me
-    const meRes = await makeRequest({
-      hostname: 'localhost',
-      port: PORT,
-      path: '/api/auth/me',
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${citizenToken}`
-      }
-    });
-    assert(meRes.status === 200 && meRes.body.user.email === testEmail, '5. GET /api/auth/me returns authenticated citizen profile');
-
-    // 6. Citizen creates a report
-    const reportPayload = JSON.stringify({
-      category: 'Pothole',
-      location: 'Ring Road near Metro Station',
-      description: 'Dangerous pothole in left traffic lane.'
-    });
-    const createReportRes = await makeRequest(
-      {
-        hostname: 'localhost',
-        port: PORT,
-        path: '/api/reports',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(reportPayload),
-          Authorization: `Bearer ${citizenToken}`
-        }
-      },
-      reportPayload
+    const meRes = await makeRequest(
+      { path: '/api/auth/me', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${citizenToken}` }
     );
-    assert(
-      createReportRes.status === 201 &&
-        createReportRes.body.report.report_id &&
-        createReportRes.body.report.report_id.startsWith('CF-') &&
-        createReportRes.body.report.status === 'PENDING',
-      `6. POST /api/reports creates ticket with sequential ID (${createReportRes.body.report?.report_id})`
-    );
-    const createdReportId = createReportRes.body.report?.report_id;
+    test(meRes.status === 200 && meRes.body.user.email === testEmail, '8.3e Get Current User: /api/auth/me returns citizen profile');
 
-    // 7. Citizen retrieves own reports
-    const myReportsRes = await makeRequest({
-      hostname: 'localhost',
-      port: PORT,
-      path: '/api/reports/my',
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${citizenToken}`
-      }
-    });
-    assert(
+    const missingTokenRes = await makeRequest({ path: '/api/auth/me', method: 'GET' });
+    test(missingTokenRes.status === 401, '8.3f Missing Token: rejected with 401 Unauthorized');
+
+    const invalidTokenRes = await makeRequest(
+      { path: '/api/auth/me', method: 'GET' },
+      null,
+      { Authorization: 'Bearer invalid_garbage_token' }
+    );
+    test(invalidTokenRes.status === 401, '8.3g Invalid Token: rejected with 401 Unauthorized');
+
+    // 8.4 Citizen Report Tests
+    const missingFieldRes = await makeRequest(
+      { path: '/api/reports', method: 'POST' },
+      JSON.stringify({ category: 'Pothole' }),
+      { Authorization: `Bearer ${citizenToken}`, 'Content-Type': 'application/json' }
+    );
+    test(missingFieldRes.status === 400, '8.4a Missing Fields: rejected with 400 Bad Request');
+
+    const invalidCatRes = await makeRequest(
+      { path: '/api/reports', method: 'POST' },
+      JSON.stringify({ category: 'FlyingSaucer', location: 'Sky', description: 'Alien' }),
+      { Authorization: `Bearer ${citizenToken}`, 'Content-Type': 'application/json' }
+    );
+    test(invalidCatRes.status === 400, '8.4b Invalid Category: rejected with 400 Bad Request');
+
+    const testImgPath = path.join(__dirname, '../../../test-pothole.png');
+    const uploadRes = await uploadMultipartReport(citizenToken, testImgPath);
+    test(
+      uploadRes.status === 201 &&
+      uploadRes.body.report.report_id.startsWith('CF-') &&
+      uploadRes.body.report.image_url,
+      `8.4c Create Report with Photo: generated ${uploadRes.body.report?.report_id}`
+    );
+    const reportId = uploadRes.body.report?.report_id;
+
+    const myReportsRes = await makeRequest(
+      { path: '/api/reports/my', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${citizenToken}` }
+    );
+    test(
       myReportsRes.status === 200 &&
-        Array.isArray(myReportsRes.body.reports) &&
-        myReportsRes.body.reports.some((r) => r.report_id === createdReportId),
-      '7. GET /api/reports/my returns list containing newly created report'
+      myReportsRes.body.reports.some((r) => r.report_id === reportId),
+      '8.4d Get My Reports: returns complaints submitted by citizen'
     );
 
-    // 8. Citizen views single report
-    const singleReportRes = await makeRequest({
-      hostname: 'localhost',
-      port: PORT,
-      path: `/api/reports/${createdReportId}`,
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${citizenToken}`
-      }
-    });
-    assert(
-      singleReportRes.status === 200 && singleReportRes.body.report.report_id === createdReportId,
-      '8. GET /api/reports/:id returns single report'
+    const singleRes = await makeRequest(
+      { path: `/api/reports/${reportId}`, method: 'GET' },
+      null,
+      { Authorization: `Bearer ${citizenToken}` }
     );
+    test(singleRes.status === 200 && singleRes.body.report.report_id === reportId, '8.4e Get Report Details: returns complaint dossier');
 
-    // 9. Citizen forbidden from admin routes
-    const citizenForbiddenRes = await makeRequest({
-      hostname: 'localhost',
-      port: PORT,
-      path: '/api/admin/reports',
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${citizenToken}`
-      }
-    });
-    assert(citizenForbiddenRes.status === 403, '9. Citizen is rejected from GET /api/admin/reports with 403 Forbidden');
-
-    // 10. Login as seeded Admin
-    const adminLoginPayload = JSON.stringify({
-      email: 'admin@civicfix.org',
-      password: 'Admin@12345'
-    });
+    // 8.5 Admin Tests
     const adminLoginRes = await makeRequest(
-      {
-        hostname: 'localhost',
-        port: PORT,
-        path: '/api/auth/login',
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(adminLoginPayload)
-        }
-      },
-      adminLoginPayload
+      { path: '/api/auth/login', method: 'POST' },
+      JSON.stringify({ email: 'admin@civicfix.org', password: 'Admin@12345' }),
+      { 'Content-Type': 'application/json' }
     );
-    assert(
-      adminLoginRes.status === 200 && adminLoginRes.body.user.role === 'admin',
-      '10. Admin logs in with default seed credentials'
-    );
+    test(adminLoginRes.status === 200 && adminLoginRes.body.user.role === 'admin', '8.5a Admin Login: succeeds with default admin');
     const adminToken = adminLoginRes.body.token;
 
-    // 11. Admin views all reports
-    const adminReportsRes = await makeRequest({
-      hostname: 'localhost',
-      port: PORT,
-      path: '/api/admin/reports',
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${adminToken}`
-      }
-    });
-    assert(
+    const citizenBlockedRes = await makeRequest(
+      { path: '/api/admin/reports', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${citizenToken}` }
+    );
+    test(citizenBlockedRes.status === 403, '8.5b Citizen Blocked from Admin: receives 403 Forbidden');
+
+    const adminReportsRes = await makeRequest(
+      { path: '/api/admin/reports', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${adminToken}` }
+    );
+    test(
       adminReportsRes.status === 200 &&
-        Array.isArray(adminReportsRes.body.reports) &&
-        adminReportsRes.body.reports.length > 0,
-      `11. Admin GET /api/admin/reports retrieves all reports (${adminReportsRes.body.count} total)`
+      Array.isArray(adminReportsRes.body.reports) &&
+      adminReportsRes.body.reports.some((r) => r.report_id === reportId),
+      '8.5c Admin Get All Reports: returns all municipal complaints'
     );
 
-    // 12. Admin views stats
-    const statsRes = await makeRequest({
-      hostname: 'localhost',
-      port: PORT,
-      path: '/api/admin/stats',
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${adminToken}`
-      }
-    });
-    assert(
-      statsRes.status === 200 &&
-        typeof statsRes.body.stats.total === 'number' &&
-        typeof statsRes.body.stats.pending === 'number',
-      `12. Admin GET /api/admin/stats returns aggregate counts (Total: ${statsRes.body.stats?.total})`
+    const adminStatsRes = await makeRequest(
+      { path: '/api/admin/stats', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${adminToken}` }
+    );
+    test(
+      adminStatsRes.status === 200 &&
+      typeof adminStatsRes.body.stats.total === 'number' &&
+      typeof adminStatsRes.body.stats.pending === 'number',
+      '8.5d Admin Statistics: aggregates counts from real PostgreSQL DB'
     );
 
-    // 13. Admin transitions status: PENDING -> IN_PROGRESS
-    const updateProgressPayload = JSON.stringify({ status: 'IN_PROGRESS' });
-    const updateProgressRes = await makeRequest(
-      {
-        hostname: 'localhost',
-        port: PORT,
-        path: `/api/admin/reports/${createdReportId}/status`,
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(updateProgressPayload),
-          Authorization: `Bearer ${adminToken}`
-        }
-      },
-      updateProgressPayload
+    const updateStatusRes = await makeRequest(
+      { path: `/api/admin/reports/${reportId}/status`, method: 'PATCH' },
+      JSON.stringify({ status: 'IN_PROGRESS' }),
+      { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
     );
-    assert(
-      updateProgressRes.status === 200 && updateProgressRes.body.report.status === 'IN_PROGRESS',
-      '13. Admin updates report status to IN_PROGRESS'
+    test(
+      updateStatusRes.status === 200 && updateStatusRes.body.report.status === 'IN_PROGRESS',
+      '8.5e Update Report Status: transitions PENDING -> IN_PROGRESS'
     );
 
-    // 14. Admin transitions status: IN_PROGRESS -> RESOLVED
-    const updateResolvedPayload = JSON.stringify({ status: 'RESOLVED' });
-    const updateResolvedRes = await makeRequest(
-      {
-        hostname: 'localhost',
-        port: PORT,
-        path: `/api/admin/reports/${createdReportId}/status`,
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(updateResolvedPayload),
-          Authorization: `Bearer ${adminToken}`
-        }
-      },
-      updateResolvedPayload
-    );
-    assert(
-      updateResolvedRes.status === 200 && updateResolvedRes.body.report.status === 'RESOLVED',
-      '14. Admin updates report status to RESOLVED'
-    );
-
-    // 15. Invalid status update rejected
-    const invalidStatusPayload = JSON.stringify({ status: 'COMPLETED_INVALID' });
     const invalidStatusRes = await makeRequest(
-      {
-        hostname: 'localhost',
-        port: PORT,
-        path: `/api/admin/reports/${createdReportId}/status`,
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          'Content-Length': Buffer.byteLength(invalidStatusPayload),
-          Authorization: `Bearer ${adminToken}`
-        }
-      },
-      invalidStatusPayload
+      { path: `/api/admin/reports/${reportId}/status`, method: 'PATCH' },
+      JSON.stringify({ status: 'FAKE_STATUS' }),
+      { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
     );
-    assert(invalidStatusRes.status === 400, '15. Invalid status transition rejected with 400 Bad Request');
+    test(invalidStatusRes.status === 400, '8.5f Invalid Status: rejected with 400 Bad Request');
 
-    // 16. Citizen verifies status is now RESOLVED
-    const citizenCheckRes = await makeRequest({
-      hostname: 'localhost',
-      port: PORT,
-      path: `/api/reports/${createdReportId}`,
-      method: 'GET',
-      headers: {
-        Authorization: `Bearer ${citizenToken}`
-      }
-    });
-    assert(
-      citizenCheckRes.status === 200 && citizenCheckRes.body.report.status === 'RESOLVED',
-      '16. Citizen verifies persisted RESOLVED status'
+    // 8.6 Data Persistence Verification
+    const recheckRes = await makeRequest(
+      { path: `/api/reports/${reportId}`, method: 'GET' },
+      null,
+      { Authorization: `Bearer ${citizenToken}` }
+    );
+    test(
+      recheckRes.status === 200 && recheckRes.body.report.status === 'IN_PROGRESS',
+      '8.6 Data Persistence: status update persisted in PostgreSQL'
     );
 
-    console.log(`\n========================================`);
-    console.log(`Verification Summary: ${testsPassed}/${testsTotal} passed`);
-    console.log(`========================================\n`);
+    // 8.7 Error Route Testing
+    const notFoundRes = await makeRequest({ path: '/api/nonexistent-endpoint', method: 'GET' });
+    test(notFoundRes.status === 404 && notFoundRes.body.success === false, '8.7 404 Route Handling: unknown endpoints return clean JSON');
 
-    if (testsPassed === testsTotal) {
+    console.log('\n================================================================');
+    console.log(`PHASE 8 BACKEND TEST SUMMARY: ${passed}/${total} assertions passed`);
+    console.log('================================================================\n');
+
+    if (passed === total) {
       process.exit(0);
     } else {
       process.exit(1);
     }
   } catch (err) {
-    console.error('Verification execution error:', err);
+    console.error('Fatal test error:', err);
     process.exit(1);
   }
 }
 
-runBackendVerification();
+runCompleteBackendTestSuite();

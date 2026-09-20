@@ -2,8 +2,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider } from './context/AuthContext';
 
-import Navbar from './components/Navbar';
-import Footer from './components/Footer';
+import MainLayout from './layouts/MainLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import AdminRoute from './components/AdminRoute';
 
@@ -21,35 +20,31 @@ export default function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
-        <div className="app-container">
-          <Navbar />
-          <main className="main-content">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/login" element={<LoginPage />} />
-              <Route path="/register" element={<RegisterPage />} />
+        <Routes>
+          <Route element={<MainLayout />}>
+            {/* Public Routes */}
+            <Route path="/" element={<LandingPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="/register" element={<RegisterPage />} />
 
-              {/* Citizen Protected Routes */}
-              <Route element={<ProtectedRoute />}>
-                <Route path="/dashboard" element={<CitizenDashboard />} />
-                <Route path="/report" element={<ReportProblemPage />} />
-                <Route path="/reports" element={<MyReportsPage />} />
-                <Route path="/reports/:id" element={<ReportDetailsPage />} />
-              </Route>
+            {/* Citizen Protected Routes */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/dashboard" element={<CitizenDashboard />} />
+              <Route path="/report" element={<ReportProblemPage />} />
+              <Route path="/reports" element={<MyReportsPage />} />
+              <Route path="/reports/:id" element={<ReportDetailsPage />} />
+            </Route>
 
-              {/* Admin Protected Routes */}
-              <Route element={<AdminRoute />}>
-                <Route path="/admin" element={<AdminDashboard />} />
-                <Route path="/admin/reports/:id" element={<AdminReportDetailsPage />} />
-              </Route>
+            {/* Admin Protected Routes */}
+            <Route element={<AdminRoute />}>
+              <Route path="/admin" element={<AdminDashboard />} />
+              <Route path="/admin/reports/:id" element={<AdminReportDetailsPage />} />
+            </Route>
 
-              {/* Catch-all redirect */}
-              <Route path="*" element={<Navigate to="/" replace />} />
-            </Routes>
-          </main>
-          <Footer />
-        </div>
+            {/* Catch-all redirect */}
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Route>
+        </Routes>
       </BrowserRouter>
     </AuthProvider>
   );

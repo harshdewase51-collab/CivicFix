@@ -45,6 +45,7 @@ async function migrate() {
 
     // 4. Indexes
     await client.query(`
+      CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
       CREATE INDEX IF NOT EXISTS idx_reports_user_id ON reports(user_id);
       CREATE INDEX IF NOT EXISTS idx_reports_status ON reports(status);
       CREATE INDEX IF NOT EXISTS idx_reports_category ON reports(category);
