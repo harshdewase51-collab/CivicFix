@@ -26,7 +26,13 @@ function optimizeConnectionString(urlStr) {
 }
 
 const rawConnectionString = process.env.DATABASE_URL;
-const connectionString = optimizeConnectionString(rawConnectionString);
+const isInvalidWebUrl = rawConnectionString && (
+  rawConnectionString.startsWith('http://') ||
+  rawConnectionString.startsWith('https://') ||
+  rawConnectionString.includes('console.neon.tech')
+);
+
+const connectionString = isInvalidWebUrl ? null : optimizeConnectionString(rawConnectionString);
 const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
 
 const isLocalhost = connectionString && (
@@ -42,7 +48,7 @@ const isCloud = connectionString && (
 
 let pool = null;
 
-if (connectionString) {
+if (connectionString && !isInvalidWebUrl) {
   pool = new Pool({
     connectionString,
     ssl: isCloud ? { rejectUnauthorized: false } : false,
@@ -142,9 +148,10 @@ module.exports = {
   ensureDatabaseReady,
   query: async (text, params) => {
     if (!pool) {
-      const err = new Error(
-        'Database connection unavailable: DATABASE_URL is not configured in Vercel environment variables. Please add your Neon PostgreSQL connection string to Project Settings → Environment Variables.'
-      );
+      const message = isInvalidWebUrl
+        ? 'Database configuration error: DATABASE_URL in Vercel environment variables is set to the Neon Web Console URL (https://console.neon.tech/...) instead of a PostgreSQL connection string (postgresql://user:password@ep-xyz.region.aws.neon.tech/dbname?sslmode=require). Please update DATABASE_URL in Vercel Project Settings → Environment Variables.'
+        : 'Database connection unavailable: DATABASE_URL is not configured in Vercel environment variables. Please add your Neon PostgreSQL connection string to Project Settings → Environment Variables.';
+      const err = new Error(message);
       err.statusCode = 503;
       throw err;
     }

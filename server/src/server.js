@@ -89,20 +89,31 @@ app.get('/api/health', async (req, res) => {
   let dbError = null;
 
   if (dbConfigured) {
-    try {
-      const { pool } = require('./db');
-      if (pool) {
-        const start = Date.now();
-        await pool.query('SELECT 1');
-        latencyMs = Date.now() - start;
-        dbStatus = 'connected';
-      } else {
-        dbStatus = 'pool_not_initialized';
+    const isInvalidWebUrl = process.env.DATABASE_URL && (
+      process.env.DATABASE_URL.startsWith('http://') ||
+      process.env.DATABASE_URL.startsWith('https://') ||
+      process.env.DATABASE_URL.includes('console.neon.tech')
+    );
+
+    if (isInvalidWebUrl) {
+      dbStatus = 'invalid_connection_string';
+      dbError = 'DATABASE_URL is set to a Neon web console URL (https://console.neon.tech/...) instead of a valid PostgreSQL connection string (postgresql://user:password@ep-xyz.region.aws.neon.tech/dbname?sslmode=require).';
+    } else {
+      try {
+        const { pool } = require('./db');
+        if (pool) {
+          const start = Date.now();
+          await pool.query('SELECT 1');
+          latencyMs = Date.now() - start;
+          dbStatus = 'connected';
+        } else {
+          dbStatus = 'pool_not_initialized';
+        }
+      } catch (err) {
+        dbStatus = 'error';
+        dbError = err?.message || String(err);
+        console.error('Health check database ping notice:', err.message);
       }
-    } catch (err) {
-      dbStatus = 'error';
-      dbError = err?.message || String(err);
-      console.error('Health check database ping notice:', err.message);
     }
   }
 
