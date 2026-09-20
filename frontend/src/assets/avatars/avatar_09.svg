@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg9" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#DCFCE7"/>
+      <stop offset="100%" stop-color="#BBF7D0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="url(#bg9)"/>
+  <!-- Torso & Clothes -->
+  <path d="M22 100 C22 75 32 68 50 68 C68 68 78 75 78 100 Z" fill="#15803D"/>
+  <path d="M42 68 L50 78 L58 68 Z" fill="#F0FDF4"/>
+  <!-- Neck -->
+  <rect x="44" y="55" width="12" height="15" rx="3" fill="#C98B60"/>
+  <!-- Head -->
+  <ellipse cx="50" cy="42" rx="17" ry="20" fill="#DE9E74"/>
+  <!-- Beard -->
+  <path d="M36 44 C36 60 42 63 50 63 C58 63 64 60 64 44 C64 52 58 56 50 56 C42 56 36 52 36 44 Z" fill="#382212"/>
+  <!-- Brown Hair -->
+  <path d="M30 38 C30 20 40 16 50 16 C60 16 70 20 70 38 C66 30 60 26 50 26 C40 26 34 30 30 38 Z" fill="#382212"/>
+  <!-- Eyes -->
+  <circle cx="43" cy="39" r="2.2" fill="#1C1917"/>
+  <circle cx="57" cy="39" r="2.2" fill="#1C1917"/>
+  <!-- Smile -->
+  <path d="M46 50 Q50 54 54 50" stroke="#FFFFFF" stroke-width="1.6" stroke-linecap="round" fill="none"/>
+</svg>

@@ -3,7 +3,7 @@
    Visual Identity: Clean, authoritative, modern civic-tech platform
    ========================================================================== */
 
-:root {
+:root, [data-theme="light"] {
   /* Primary & Brand */
   --primary: #1E3A8A;           /* Deep Civic Blue */
   --primary-hover: #172554;     /* Navy 950 */
@@ -58,6 +58,48 @@
   /* Layout */
   --max-w-content: 1200px;
   --header-height: 70px;
+}
+
+/* Dark Mode Color Palette */
+[data-theme="dark"] {
+  --primary: #3B82F6;           /* Vivid Civic Blue */
+  --primary-hover: #60A5FA;
+  --primary-light: rgba(59, 130, 246, 0.15);
+  --accent: #14B8A6;
+  --accent-hover: #2DD4BF;
+
+  --bg-base: #0B0F19;           /* Deep Midnight Navy */
+  --bg-surface: #131B2E;        /* Elevated Slate Navy */
+  --bg-muted: #1E293B;          /* Medium Slate */
+  --bg-elevated: #1E293B;
+
+  --text-main: #F1F5F9;         /* High-contrast Slate 100 */
+  --text-muted: #94A3B8;        /* Slate 400 */
+  --text-subtle: #64748B;       /* Slate 500 */
+  --text-inverse: #0F172A;
+
+  --border: #1E293B;
+  --border-focus: #60A5FA;
+
+  --status-pending-text: #FDE68A;
+  --status-pending-bg: rgba(245, 158, 11, 0.18);
+  --status-pending-border: #D97706;
+
+  --status-progress-text: #93C5FD;
+  --status-progress-bg: rgba(59, 130, 246, 0.18);
+  --status-progress-border: #2563EB;
+
+  --status-resolved-text: #6EE7B7;
+  --status-resolved-bg: rgba(16, 185, 129, 0.18);
+  --status-resolved-border: #059669;
+
+  --danger-text: #FCA5A5;
+  --danger-bg: rgba(239, 68, 68, 0.18);
+  --danger-border: #DC2626;
+
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.5), 0 2px 4px -2px rgba(0, 0, 0, 0.4);
+  --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.6), 0 4px 6px -4px rgba(0, 0, 0, 0.5);
 }
 
 /* Reset & Base Setup */
@@ -191,8 +233,39 @@ body {
 }
 
 .role-pill.admin {
-  background: #FEF3C7;
-  color: #92400E;
+  background: var(--status-pending-bg);
+  color: var(--status-pending-text);
+  border: 1px solid var(--status-pending-border);
+}
+
+/* Footer */
+.footer {
+  background: var(--bg-surface);
+  border-top: 1px solid var(--border);
+  padding: 1.5rem 0;
+  color: var(--text-muted);
+  font-size: 0.9rem;
+  margin-top: auto;
+}
+
+.footer-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+/* Inline Code */
+code {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  background: var(--bg-muted);
+  color: var(--primary);
+  padding: 0.15rem 0.45rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  font-size: 0.88em;
+  font-weight: 600;
 }
 
 /* Buttons */
@@ -627,19 +700,160 @@ textarea:focus-visible {
   outline-offset: 2px;
 }
 
+/* Mobile Navigation Controls */
+.mobile-toggle-wrapper {
+  display: none;
+}
+
+.mobile-menu-btn {
+  background: var(--bg-muted);
+  border: 1px solid var(--border);
+  color: var(--text-main);
+  padding: 0.45rem;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.mobile-dropdown {
+  display: none;
+  background: var(--bg-surface);
+  border-bottom: 1px solid var(--border);
+  padding: 1.25rem;
+  box-shadow: var(--shadow-lg);
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 49;
+}
+
+/* Civic Ticket Presentation */
+.civic-ticket {
+  background: var(--bg-surface);
+  border: 2px solid var(--border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-md);
+  margin-bottom: 2rem;
+}
+
+.civic-ticket-header {
+  background: var(--bg-muted);
+  border-bottom: 1px dashed var(--border);
+  padding: 1.25rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.civic-ticket-brand {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--primary);
+}
+
+.civic-ticket-body {
+  padding: 1.5rem;
+}
+
+/* Common Issues Distribution Bar */
+.issue-bar-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.issue-bar-row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+}
+
+.issue-bar-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.issue-bar-track {
+  height: 9px;
+  background: var(--bg-muted);
+  border-radius: var(--radius-full);
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+
+.issue-bar-fill {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  transition: width 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+/* Guided Form Steps */
+.form-step-card {
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+  margin-bottom: 1.25rem;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.form-step-card:hover {
+  border-color: var(--border-focus);
+}
+
+.form-step-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 800;
+  color: var(--primary);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  margin-bottom: 0.5rem;
+}
+
+/* Print Styles */
+@media print {
+  .navbar, .footer, .btn, .theme-toggle-group, .mobile-toggle-wrapper {
+    display: none !important;
+  }
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+  .card, .civic-ticket {
+    border: 1px solid #ccc !important;
+    box-shadow: none !important;
+  }
+}
+
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .navbar-inner {
-    flex-wrap: wrap;
-    padding: 0.5rem 0;
+  .desktop-nav {
+    display: none !important;
   }
-  .navbar {
-    height: auto;
-    padding: 0.5rem 0;
+  .mobile-toggle-wrapper {
+    display: block !important;
   }
-  .nav-links {
-    gap: 0.75rem;
-    flex-wrap: wrap;
+  .mobile-dropdown {
+    display: block !important;
   }
   .timeline-track::before {
     left: 2rem;
@@ -661,5 +875,9 @@ textarea:focus-visible {
   .stat-grid {
     grid-template-columns: 1fr;
   }
+  .theme-toggle-label {
+    display: none;
+  }
 }
+
 

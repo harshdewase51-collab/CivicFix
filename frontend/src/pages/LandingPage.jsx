@@ -57,7 +57,7 @@ export default function LandingPage() {
       title: 'Public Infrastructure',
       desc: 'Notify authorities about damaged bus shelters, footpaths, signs, and public railings.',
       icon: Building2,
-      color: '#4B5563'
+      color: '#64748B'
     }
   ];
 
@@ -65,7 +65,7 @@ export default function LandingPage() {
     <div>
       {/* Hero Section */}
       <section style={{
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--bg-surface)',
         borderBottom: '1px solid var(--border)',
         padding: '4.5rem 0 4rem 0',
         textAlign: 'center'
@@ -79,6 +79,7 @@ export default function LandingPage() {
             borderRadius: 'var(--radius-full)',
             background: 'var(--primary-light)',
             color: 'var(--primary)',
+            border: '1px solid var(--border)',
             fontWeight: 600,
             fontSize: '0.85rem',
             marginBottom: '1.5rem'
@@ -145,7 +146,8 @@ export default function LandingPage() {
                     width: '50px',
                     height: '50px',
                     borderRadius: 'var(--radius-md)',
-                    backgroundColor: `${item.color}15`,
+                    backgroundColor: `${item.color}18`,
+                    border: `1px solid ${item.color}30`,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'center',
@@ -170,7 +172,7 @@ export default function LandingPage() {
 
       {/* How it Works */}
       <section style={{
-        backgroundColor: '#FFFFFF',
+        backgroundColor: 'var(--bg-surface)',
         borderTop: '1px solid var(--border)',
         borderBottom: '1px solid var(--border)',
         padding: '4rem 0'
@@ -197,6 +199,7 @@ export default function LandingPage() {
                 borderRadius: 'var(--radius-full)',
                 backgroundColor: 'var(--primary-light)',
                 color: 'var(--primary)',
+                border: '1px solid var(--border)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -206,7 +209,7 @@ export default function LandingPage() {
               }}>
                 1
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Snap & Submit</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Snap & Submit</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem' }}>
                 Capture a photo of the defect, specify the street location, and submit your report in 60 seconds.
               </p>
@@ -217,8 +220,9 @@ export default function LandingPage() {
                 width: '60px',
                 height: '60px',
                 borderRadius: 'var(--radius-full)',
-                backgroundColor: '#FEF3C7',
-                color: '#B45309',
+                backgroundColor: 'var(--status-pending-bg)',
+                color: 'var(--status-pending-text)',
+                border: '1px solid var(--status-pending-border)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -228,7 +232,7 @@ export default function LandingPage() {
               }}>
                 2
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Receive Tracking ID</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Receive Tracking ID</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem' }}>
                 Instantly receive an official tracking reference (e.g. <code>CF-1001</code>) and watch municipal triage.
               </p>
@@ -239,8 +243,9 @@ export default function LandingPage() {
                 width: '60px',
                 height: '60px',
                 borderRadius: 'var(--radius-full)',
-                backgroundColor: '#D1FAE5',
-                color: '#047857',
+                backgroundColor: 'var(--status-resolved-bg)',
+                color: 'var(--status-resolved-text)',
+                border: '1px solid var(--status-resolved-border)',
                 display: 'inline-flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -250,7 +255,7 @@ export default function LandingPage() {
               }}>
                 3
               </div>
-              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem' }}>Verified Resolution</h3>
+              <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>Verified Resolution</h3>
               <p style={{ color: 'var(--text-muted)', fontSize: '0.92rem' }}>
                 Authorities update progress from <em>In Progress</em> to <em>Resolved</em> with clear verification.
               </p>
@@ -262,7 +267,7 @@ export default function LandingPage() {
       {/* Bottom CTA Banner */}
       <section style={{ padding: '4rem 0', textAlign: 'center' }}>
         <div className="container" style={{ maxWidth: '640px' }}>
-          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem' }}>
+          <h2 style={{ fontSize: '2rem', fontWeight: 800, marginBottom: '1rem', color: 'var(--text-main)' }}>
             Ready to improve your neighborhood?
           </h2>
           <p style={{ color: 'var(--text-muted)', marginBottom: '1.75rem', fontSize: '1.05rem' }}>
@@ -273,6 +278,7 @@ export default function LandingPage() {
           </Link>
         </div>
       </section>
+
     </div>
   );
 }

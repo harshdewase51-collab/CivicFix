@@ -18,7 +18,14 @@ async function migrate() {
         created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
       );
     `);
-    console.log('✅ Table "users" verified.');
+    await client.query(`
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS phone VARCHAR(30);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS area VARCHAR(150);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_url VARCHAR(500);
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_type VARCHAR(20) DEFAULT 'preset';
+      ALTER TABLE users ADD COLUMN IF NOT EXISTS avatar_preset VARCHAR(50) DEFAULT 'avatar_01';
+    `);
+    console.log('✅ Table "users" verified with profile and avatar columns.');
 
     // 2. Report ID Sequence
     await client.query(`

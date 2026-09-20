@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#CCFBF1"/>
+      <stop offset="100%" stop-color="#99F6E4"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="url(#bg2)"/>
+  <!-- Back Hair -->
+  <path d="M28 42 C26 62 30 75 32 82 C34 76 35 60 35 48 Z" fill="#451A03"/>
+  <path d="M72 42 C74 62 70 75 68 82 C66 76 65 60 65 48 Z" fill="#451A03"/>
+  <!-- Torso & Clothes -->
+  <path d="M22 100 C22 75 32 68 50 68 C68 68 78 75 78 100 Z" fill="#0D9488"/>
+  <path d="M44 68 L50 76 L56 68 Z" fill="#FFFFFF"/>
+  <!-- Neck -->
+  <rect x="44" y="55" width="12" height="15" rx="3" fill="#F0B58D"/>
+  <!-- Head -->
+  <ellipse cx="50" cy="42" rx="17" ry="20" fill="#F8CBA6"/>
+  <!-- Hair Front -->
+  <path d="M30 40 C30 22 40 18 50 18 C60 18 70 22 70 40 C66 32 58 28 50 29 C42 28 34 32 30 40 Z" fill="#451A03"/>
+  <!-- Eyes -->
+  <circle cx="44" cy="41" r="2.2" fill="#292524"/>
+  <circle cx="56" cy="41" r="2.2" fill="#292524"/>
+  <!-- Lashes / Brows -->
+  <path d="M41 36 Q44 34 47 36" stroke="#451A03" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <path d="M53 36 Q56 34 59 36" stroke="#451A03" stroke-width="1.2" stroke-linecap="round" fill="none"/>
+  <!-- Smile -->
+  <path d="M45 51 Q50 55 55 51" stroke="#B45309" stroke-width="1.4" stroke-linecap="round" fill="none"/>
+  <!-- Earrings -->
+  <circle cx="32" cy="45" r="1.8" fill="#F59E0B"/>
+  <circle cx="68" cy="45" r="1.8" fill="#F59E0B"/>
+</svg>

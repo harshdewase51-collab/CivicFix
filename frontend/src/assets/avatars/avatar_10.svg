@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg10" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FFEDD5"/>
+      <stop offset="100%" stop-color="#FED7AA"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="url(#bg10)"/>
+  <!-- Curly Afro Back -->
+  <circle cx="50" cy="38" r="25" fill="#1C1917"/>
+  <circle cx="30" cy="40" r="10" fill="#1C1917"/>
+  <circle cx="70" cy="40" r="10" fill="#1C1917"/>
+  <!-- Torso & Clothes -->
+  <path d="M22 100 C22 75 32 68 50 68 C68 68 78 75 78 100 Z" fill="#C2410C"/>
+  <path d="M42 68 L50 78 L58 68 Z" fill="#FFF7ED"/>
+  <!-- Neck -->
+  <rect x="44" y="55" width="12" height="15" rx="3" fill="#6A3B1F"/>
+  <!-- Head -->
+  <ellipse cx="50" cy="43" rx="17" ry="20" fill="#7C4827"/>
+  <!-- Front Hair Details -->
+  <path d="M34 38 C34 26 42 22 50 22 C58 22 66 26 66 38 C62 30 56 28 50 28 C44 28 38 30 34 38 Z" fill="#1C1917"/>
+  <!-- Gold Hoop Earrings -->
+  <circle cx="31" cy="49" r="4" fill="none" stroke="#F59E0B" stroke-width="1.8"/>
+  <circle cx="69" cy="49" r="4" fill="none" stroke="#F59E0B" stroke-width="1.8"/>
+  <!-- Eyes -->
+  <circle cx="43" cy="42" r="2.2" fill="#0A0A0A"/>
+  <circle cx="57" cy="42" r="2.2" fill="#0A0A0A"/>
+  <!-- Smile -->
+  <path d="M45 52 Q50 56 55 52" stroke="#431407" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+</svg>

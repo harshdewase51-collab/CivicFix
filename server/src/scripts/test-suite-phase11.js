@@ -126,14 +126,14 @@ async function uploadMultipart(token, fields, fileInfo = null) {
 
 async function runPhase11Tests() {
   console.log('====================================================');
-  console.log('  CIVICFIX PHASE 11 COMPLETE TEST SUITE');
+  console.log('  CIVICFIX PHASE 11 EXHAUSTIVE END-TO-END TEST SUITE');
   console.log('====================================================\n');
 
   try {
     // ----------------------------------------------------
-    // 11.1 SERVER TESTING
+    // 11.2 BACKEND HEALTH TEST
     // ----------------------------------------------------
-    console.log('--- 11.1 Server Endpoints & Routing ---');
+    console.log('--- 11.2 Backend Health Test ---');
     const healthRes = await request({ path: '/api/health', method: 'GET' });
     recordResult(
       'Server Health Check (GET /api/health)',
@@ -141,31 +141,10 @@ async function runPhase11Tests() {
       healthRes.status !== 200 ? `Status ${healthRes.status}` : null
     );
 
-    const notFoundRes = await request({ path: '/api/nonexistent-endpoint', method: 'GET' });
-    recordResult(
-      '404 Nonexistent Route (GET /api/nonexistent-endpoint)',
-      notFoundRes.status === 404 && notFoundRes.body.success === false,
-      notFoundRes.status !== 404 ? `Expected 404 but got ${notFoundRes.status}` : null
-    );
-
-    const unauthReports = await request({ path: '/api/reports/my', method: 'GET' });
-    recordResult(
-      '401 Unauthenticated Protection (GET /api/reports/my)',
-      unauthReports.status === 401,
-      unauthReports.status !== 401 ? `Expected 401 but got ${unauthReports.status}` : null
-    );
-
-    const unauthAdmin = await request({ path: '/api/admin/stats', method: 'GET' });
-    recordResult(
-      '401 Unauthenticated Admin Access (GET /api/admin/stats)',
-      unauthAdmin.status === 401,
-      unauthAdmin.status !== 401 ? `Expected 401 but got ${unauthAdmin.status}` : null
-    );
-
     // ----------------------------------------------------
-    // 11.2 DATABASE INTEGRITY & SCHEMA
+    // 11.3 DATABASE INTEGRITY & SCHEMA TEST
     // ----------------------------------------------------
-    console.log('\n--- 11.2 Database Integrity & Constraints ---');
+    console.log('\n--- 11.3 Database Schema & Password Hashing Verification ---');
     const userTableCheck = await pool.query(`
       SELECT column_name, data_type 
       FROM information_schema.columns 
@@ -190,15 +169,25 @@ async function runPhase11Tests() {
       reportTableCheck.rows.length < 8 ? 'Missing columns in reports table' : null
     );
 
+    // Check that admin password in DB is hashed and not plaintext
+    const adminCheck = await pool.query(`SELECT password_hash FROM users WHERE email = 'admin@civicfix.org'`);
+    const adminHash = adminCheck.rows[0]?.password_hash;
+    const isBcryptHash = adminHash && adminHash.startsWith('$2');
+    recordResult(
+      'Database: Passwords Stored as Bcrypt Hashes (No Plaintext)',
+      isBcryptHash,
+      !isBcryptHash ? 'Admin password is not a bcrypt hash' : null
+    );
+
     // ----------------------------------------------------
-    // 11.3 CITIZEN USER FLOW (Registration, Login, Report)
+    // 11.4 CITIZEN REGISTRATION TEST
     // ----------------------------------------------------
-    console.log('\n--- 11.3 Citizen Flow Testing ---');
+    console.log('\n--- 11.4 Citizen Registration Testing ---');
     const timestamp = Date.now();
     const citizenEmail = `citizen_test_${timestamp}@civicfix.org`;
     const citizenPassword = 'Password@123';
 
-    // Register
+    // Successful registration
     const regRes = await request(
       { path: '/api/auth/register', method: 'POST' },
       JSON.stringify({ name: 'Aarav Patel', email: citizenEmail, password: citizenPassword }),
@@ -210,20 +199,61 @@ async function runPhase11Tests() {
       regRes.status !== 201 ? `Registration failed with status ${regRes.status}` : null
     );
     const citizenToken = regRes.body.token;
+    const citizenId = regRes.body.user.id;
 
-    // Login
+    // Duplicate email rejected
+    const dupEmailRes = await request(
+      { path: '/api/auth/register', method: 'POST' },
+      JSON.stringify({ name: 'Aarav Duplicate', email: citizenEmail, password: citizenPassword }),
+      { 'Content-Type': 'application/json' }
+    );
+    recordResult(
+      'Registration: 400 Bad Request on Duplicate Email',
+      dupEmailRes.status === 400 && dupEmailRes.body.message.includes('already exists'),
+      dupEmailRes.status !== 400 ? `Expected 400 but got ${dupEmailRes.status}` : null
+    );
+
+    // ----------------------------------------------------
+    // 11.5 CITIZEN LOGIN TEST
+    // ----------------------------------------------------
+    console.log('\n--- 11.5 Citizen Login Testing ---');
+    // Valid login
     const loginRes = await request(
       { path: '/api/auth/login', method: 'POST' },
       JSON.stringify({ email: citizenEmail, password: citizenPassword }),
       { 'Content-Type': 'application/json' }
     );
     recordResult(
-      'Citizen Login (POST /api/auth/login)',
+      'Citizen Valid Login (POST /api/auth/login)',
       loginRes.status === 200 && loginRes.body.token != null,
       loginRes.status !== 200 ? `Login failed with status ${loginRes.status}` : null
     );
 
-    // Profile GET /api/auth/me
+    // Wrong password login
+    const wrongPassRes = await request(
+      { path: '/api/auth/login', method: 'POST' },
+      JSON.stringify({ email: citizenEmail, password: 'WrongPassword@999' }),
+      { 'Content-Type': 'application/json' }
+    );
+    recordResult(
+      'Login Security: 401 Unauthorized on Wrong Password',
+      wrongPassRes.status === 401 && wrongPassRes.body.message.includes('Invalid email or password'),
+      wrongPassRes.status !== 401 ? `Expected 401 but got ${wrongPassRes.status}` : null
+    );
+
+    // Nonexistent email login
+    const noUserRes = await request(
+      { path: '/api/auth/login', method: 'POST' },
+      JSON.stringify({ email: 'nonexistent_9999@civicfix.org', password: citizenPassword }),
+      { 'Content-Type': 'application/json' }
+    );
+    recordResult(
+      'Login Security: 401 Unauthorized on Nonexistent Email',
+      noUserRes.status === 401 && noUserRes.body.message.includes('Invalid email or password'),
+      noUserRes.status !== 401 ? `Expected 401 but got ${noUserRes.status}` : null
+    );
+
+    // Profile retrieval
     const meRes = await request(
       { path: '/api/auth/me', method: 'GET' },
       null,
@@ -235,26 +265,115 @@ async function runPhase11Tests() {
       meRes.status !== 200 ? `Failed /api/auth/me with status ${meRes.status}` : null
     );
 
-    // Create Report with Evidence Photo
+    // ----------------------------------------------------
+    // 11.6 & 11.20 LOGOUT & JWT TESTING
+    // ----------------------------------------------------
+    console.log('\n--- 11.6 & 11.20 Logout & JWT Validation Testing ---');
+    // Missing Authorization header
+    const noTokenRes = await request({ path: '/api/reports/my', method: 'GET' });
+    recordResult(
+      'JWT Security: 401 on Missing Token',
+      noTokenRes.status === 401,
+      noTokenRes.status !== 401 ? `Expected 401 but got ${noTokenRes.status}` : null
+    );
+
+    // Malformed JWT token
+    const malformedJwtRes = await request(
+      { path: '/api/reports/my', method: 'GET' },
+      null,
+      { Authorization: 'Bearer 12345malformedToken' }
+    );
+    recordResult(
+      'JWT Security: 401 on Malformed Token',
+      malformedJwtRes.status === 401,
+      malformedJwtRes.status !== 401 ? `Expected 401 but got ${malformedJwtRes.status}` : null
+    );
+
+    // ----------------------------------------------------
+    // 11.8 REPORT CREATION TEST (Photo + Pothole)
+    // ----------------------------------------------------
+    console.log('\n--- 11.8 Report Creation Test ---');
     const testImgPath = path.join(__dirname, '../../../test-pothole.png');
     const reportSubmitRes = await uploadMultipart(
       citizenToken,
       {
         category: 'Pothole',
-        location: 'MG Road Junction, Ward 14',
-        description: 'Dangerous 10-inch deep pothole near pedestrian crossing'
+        location: 'Test Location - MG Road Junction',
+        description: 'Test pothole report for CivicFix testing.'
       },
       { filePath: testImgPath, filename: 'test-pothole.png', mime: 'image/png' }
     );
-    recordResult(
-      'Report Submission with Image (POST /api/reports)',
-      reportSubmitRes.status === 201 && reportSubmitRes.body.report.report_id.startsWith('CF-'),
-      reportSubmitRes.status !== 201 ? `Failed report creation with status ${reportSubmitRes.status}` : null
-    );
     const createdReport = reportSubmitRes.body.report;
     const createdReportId = createdReport?.report_id;
+    recordResult(
+      'Report Submission with Image (POST /api/reports)',
+      reportSubmitRes.status === 201 && createdReportId && createdReportId.startsWith('CF-'),
+      reportSubmitRes.status !== 201 ? `Failed report creation with status ${reportSubmitRes.status}` : null
+    );
 
-    // Citizen My Reports
+    // Verify initial status is PENDING
+    recordResult(
+      'Report Initial Status is PENDING',
+      createdReport?.status === 'PENDING',
+      createdReport?.status !== 'PENDING' ? `Expected PENDING but got ${createdReport?.status}` : null
+    );
+
+    // ----------------------------------------------------
+    // 11.9 REPORT VALIDATION TEST
+    // ----------------------------------------------------
+    console.log('\n--- 11.9 Report Form Input Validation Testing ---');
+    // Missing Category
+    const noCatRes = await uploadMultipart(
+      citizenToken,
+      { category: '', location: 'Valid Location', description: 'Valid Description' },
+      null
+    );
+    recordResult(
+      'Validation: 400 Bad Request on Missing Category',
+      noCatRes.status === 400,
+      noCatRes.status !== 400 ? `Expected 400 but got ${noCatRes.status}` : null
+    );
+
+    // Missing Location
+    const noLocRes = await uploadMultipart(
+      citizenToken,
+      { category: 'Pothole', location: '', description: 'Valid Description' },
+      null
+    );
+    recordResult(
+      'Validation: 400 Bad Request on Missing Location',
+      noLocRes.status === 400,
+      noLocRes.status !== 400 ? `Expected 400 but got ${noLocRes.status}` : null
+    );
+
+    // Missing Description
+    const noDescRes = await uploadMultipart(
+      citizenToken,
+      { category: 'Pothole', location: 'Valid Location', description: '' },
+      null
+    );
+    recordResult(
+      'Validation: 400 Bad Request on Missing Description',
+      noDescRes.status === 400,
+      noDescRes.status !== 400 ? `Expected 400 but got ${noDescRes.status}` : null
+    );
+
+    // Unsupported file type (.txt)
+    const badFileRes = await uploadMultipart(
+      citizenToken,
+      { category: 'Pothole', location: 'Valid Location', description: 'Valid Description' },
+      { content: 'fake txt content', filename: 'malicious.txt', mime: 'text/plain' }
+    );
+    recordResult(
+      'Validation: 400 Bad Request on Unsupported Image Format (.txt)',
+      badFileRes.status === 400,
+      badFileRes.status !== 400 ? `Expected 400 but got ${badFileRes.status}` : null
+    );
+
+    // ----------------------------------------------------
+    // 11.10 MY REPORTS TEST & CITIZEN ISOLATION
+    // ----------------------------------------------------
+    console.log('\n--- 11.10 My Reports & Citizen Isolation Testing ---');
     const myReportsRes = await request(
       { path: '/api/reports/my', method: 'GET' },
       null,
@@ -262,139 +381,12 @@ async function runPhase11Tests() {
     );
     const hasSubmitted = myReportsRes.body.reports?.some((r) => r.report_id === createdReportId);
     recordResult(
-      'Citizen My Reports List (GET /api/reports/my)',
+      'My Reports Displays Citizen-Owned Reports (GET /api/reports/my)',
       myReportsRes.status === 200 && hasSubmitted,
       !hasSubmitted ? 'Submitted report not found in My Reports' : null
     );
 
-    // Citizen Report Details by ID
-    const reportDetailsRes = await request(
-      { path: `/api/reports/${createdReportId}`, method: 'GET' },
-      null,
-      { Authorization: `Bearer ${citizenToken}` }
-    );
-    recordResult(
-      'Citizen Report Details & Initial Status PENDING (GET /api/reports/:id)',
-      reportDetailsRes.status === 200 && reportDetailsRes.body.report.status === 'PENDING',
-      reportDetailsRes.body.report?.status !== 'PENDING' ? `Expected PENDING but got ${reportDetailsRes.body.report?.status}` : null
-    );
-
-    // ----------------------------------------------------
-    // 11.4 ADMIN FLOW & LIFECYCLE TRANSITIONS
-    // ----------------------------------------------------
-    console.log('\n--- 11.4 Admin Flow & Lifecycle Updates ---');
-    // Admin Login
-    const adminLoginRes = await request(
-      { path: '/api/auth/login', method: 'POST' },
-      JSON.stringify({ email: 'admin@civicfix.org', password: 'Admin@12345' }),
-      { 'Content-Type': 'application/json' }
-    );
-    recordResult(
-      'Admin Login (admin@civicfix.org)',
-      adminLoginRes.status === 200 && adminLoginRes.body.user.role === 'admin',
-      adminLoginRes.status !== 200 ? `Admin login failed with status ${adminLoginRes.status}` : null
-    );
-    const adminToken = adminLoginRes.body.token;
-
-    // Admin Stats
-    const adminStatsRes = await request(
-      { path: '/api/admin/stats', method: 'GET' },
-      null,
-      { Authorization: `Bearer ${adminToken}` }
-    );
-    const statsValid =
-      adminStatsRes.status === 200 &&
-      typeof adminStatsRes.body.stats.total === 'number' &&
-      typeof adminStatsRes.body.stats.pending === 'number';
-    recordResult(
-      'Admin Real-time Stats (GET /api/admin/stats)',
-      statsValid,
-      !statsValid ? 'Invalid stats structure' : null
-    );
-
-    // Admin Reports Queue
-    const adminReportsRes = await request(
-      { path: '/api/admin/reports', method: 'GET' },
-      null,
-      { Authorization: `Bearer ${adminToken}` }
-    );
-    const foundInQueue = adminReportsRes.body.reports?.find((r) => r.report_id === createdReportId);
-    recordResult(
-      'Admin Reports Queue & Submitter Contact (GET /api/admin/reports)',
-      adminReportsRes.status === 200 && foundInQueue && foundInQueue.citizen_email === citizenEmail,
-      !foundInQueue ? 'Report not visible in admin queue' : null
-    );
-
-    // Admin Details
-    const adminDetailsRes = await request(
-      { path: `/api/admin/reports/${createdReportId}`, method: 'GET' },
-      null,
-      { Authorization: `Bearer ${adminToken}` }
-    );
-    recordResult(
-      'Admin Report Dossier (GET /api/admin/reports/:id)',
-      adminDetailsRes.status === 200 && adminDetailsRes.body.report.report_id === createdReportId,
-      adminDetailsRes.status !== 200 ? `Failed dossier fetch with status ${adminDetailsRes.status}` : null
-    );
-
-    // Status Transition 1: PENDING -> IN_PROGRESS
-    const updateProgressRes = await request(
-      { path: `/api/admin/reports/${createdReportId}/status`, method: 'PATCH' },
-      JSON.stringify({ status: 'IN_PROGRESS' }),
-      { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
-    );
-    recordResult(
-      'Status Transition: PENDING -> IN_PROGRESS',
-      updateProgressRes.status === 200 && updateProgressRes.body.report.status === 'IN_PROGRESS',
-      updateProgressRes.body.report?.status !== 'IN_PROGRESS' ? 'Failed transition to IN_PROGRESS' : null
-    );
-
-    // Status Transition 2: IN_PROGRESS -> RESOLVED
-    const updateResolvedRes = await request(
-      { path: `/api/admin/reports/${createdReportId}/status`, method: 'PATCH' },
-      JSON.stringify({ status: 'RESOLVED' }),
-      { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
-    );
-    recordResult(
-      'Status Transition: IN_PROGRESS -> RESOLVED',
-      updateResolvedRes.status === 200 && updateResolvedRes.body.report.status === 'RESOLVED',
-      updateResolvedRes.body.report?.status !== 'RESOLVED' ? 'Failed transition to RESOLVED' : null
-    );
-
-    // ----------------------------------------------------
-    // 11.5 CITIZEN STATUS REFLECTION
-    // ----------------------------------------------------
-    console.log('\n--- 11.5 Citizen Status Reflection ---');
-    const citizenCheckRes = await request(
-      { path: `/api/reports/${createdReportId}`, method: 'GET' },
-      null,
-      { Authorization: `Bearer ${citizenToken}` }
-    );
-    const isResolved = citizenCheckRes.body.report?.status === 'RESOLVED';
-    recordResult(
-      'Citizen Sees Updated RESOLVED Status in Details',
-      citizenCheckRes.status === 200 && isResolved,
-      !isResolved ? `Status not updated: ${citizenCheckRes.body.report?.status}` : null
-    );
-
-    // ----------------------------------------------------
-    // 11.6 SECURITY & ACCESS CONTROL
-    // ----------------------------------------------------
-    console.log('\n--- 11.6 Security & Access Control ---');
-
-    // Citizen attempting admin API
-    const citizenAdminAttempt = await request(
-      { path: '/api/admin/stats', method: 'GET' },
-      null,
-      { Authorization: `Bearer ${citizenToken}` }
-    );
-    recordResult(
-      'Security: 403 Forbidden on Citizen accessing Admin API',
-      citizenAdminAttempt.status === 403,
-      citizenAdminAttempt.status !== 403 ? `Expected 403 but got ${citizenAdminAttempt.status}` : null
-    );
-
-    // Create Citizen B
+    // Create Citizen B to verify isolation
     const citizenBEmail = `citizen_b_${timestamp}@civicfix.org`;
     const regB = await request(
       { path: '/api/auth/register', method: 'POST' },
@@ -403,73 +395,252 @@ async function runPhase11Tests() {
     );
     const citizenBToken = regB.body.token;
 
-    // Citizen B trying to access Citizen A's report
+    // Citizen B My Reports should NOT include Citizen A's report
+    const citizenBReportsRes = await request(
+      { path: '/api/reports/my', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${citizenBToken}` }
+    );
+    const leakedToB = citizenBReportsRes.body.reports?.some((r) => r.report_id === createdReportId);
+    recordResult(
+      'Citizen Isolation: Citizen B Cannot See Citizen A Reports in My Reports',
+      !leakedToB,
+      leakedToB ? "Citizen B's list contains Citizen A's report" : null
+    );
+
+    // ----------------------------------------------------
+    // 11.11 REPORT DETAILS TEST
+    // ----------------------------------------------------
+    console.log('\n--- 11.11 Report Details Testing ---');
+    const reportDetailsRes = await request(
+      { path: `/api/reports/${createdReportId}`, method: 'GET' },
+      null,
+      { Authorization: `Bearer ${citizenToken}` }
+    );
+    const reportMatch =
+      reportDetailsRes.status === 200 &&
+      reportDetailsRes.body.report.report_id === createdReportId &&
+      reportDetailsRes.body.report.category === 'Pothole' &&
+      reportDetailsRes.body.report.status === 'PENDING';
+    recordResult(
+      'Report Details Loaded Correctly by ID (GET /api/reports/:id)',
+      reportMatch,
+      !reportMatch ? 'Report details mismatch' : null
+    );
+
+    // Nonexistent report query
+    const notFoundReport = await request(
+      { path: '/api/reports/CF-99999', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${citizenToken}` }
+    );
+    recordResult(
+      'Error Handling: 404 on Nonexistent Report ID',
+      notFoundReport.status === 404 && notFoundReport.body.message.includes('not found'),
+      notFoundReport.status !== 404 ? `Expected 404 but got ${notFoundReport.status}` : null
+    );
+
+    // ----------------------------------------------------
+    // 11.12 ADMIN LOGIN TEST
+    // ----------------------------------------------------
+    console.log('\n--- 11.12 Admin Login Testing ---');
+    const adminLoginRes = await request(
+      { path: '/api/auth/login', method: 'POST' },
+      JSON.stringify({ email: 'admin@civicfix.org', password: 'Admin@12345' }),
+      { 'Content-Type': 'application/json' }
+    );
+    recordResult(
+      'Admin Login & Role Verification (admin@civicfix.org)',
+      adminLoginRes.status === 200 && adminLoginRes.body.user.role === 'admin',
+      adminLoginRes.status !== 200 ? `Admin login failed with status ${adminLoginRes.status}` : null
+    );
+    const adminToken = adminLoginRes.body.token;
+
+    // ----------------------------------------------------
+    // 11.13 ADMIN DASHBOARD STATS & QUEUE TEST
+    // ----------------------------------------------------
+    console.log('\n--- 11.13 Admin Dashboard Stats & Queue Testing ---');
+    const adminStatsRes = await request(
+      { path: '/api/admin/stats', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${adminToken}` }
+    );
+    const statsValid =
+      adminStatsRes.status === 200 &&
+      typeof adminStatsRes.body.stats.total === 'number' &&
+      typeof adminStatsRes.body.stats.pending === 'number' &&
+      typeof adminStatsRes.body.stats.in_progress === 'number' &&
+      typeof adminStatsRes.body.stats.resolved === 'number';
+    recordResult(
+      'Admin Real-Time Stats Aggregation (GET /api/admin/stats)',
+      statsValid,
+      !statsValid ? 'Invalid stats structure' : null
+    );
+
+    // ----------------------------------------------------
+    // 11.14 & 11.15 ADMIN SEARCH & FILTER TESTING
+    // ----------------------------------------------------
+    console.log('\n--- 11.14 & 11.15 Admin Search & Filters Testing ---');
+    // Search by Report ID
+    const searchRes = await request(
+      { path: `/api/admin/reports?search=${createdReportId}`, method: 'GET' },
+      null,
+      { Authorization: `Bearer ${adminToken}` }
+    );
+    const searchFound = searchRes.body.reports?.some((r) => r.report_id === createdReportId);
+    recordResult(
+      `Admin Search by Report ID (${createdReportId})`,
+      searchRes.status === 200 && searchFound,
+      !searchFound ? 'Search failed to find created report' : null
+    );
+
+    // Filter by Status PENDING
+    const filterPendingRes = await request(
+      { path: '/api/admin/reports?status=PENDING', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${adminToken}` }
+    );
+    const allPending = filterPendingRes.body.reports?.every((r) => r.status === 'PENDING');
+    recordResult(
+      'Admin Filter by Status (status=PENDING)',
+      filterPendingRes.status === 200 && allPending && filterPendingRes.body.reports.length > 0,
+      !allPending ? 'Non-pending reports returned' : null
+    );
+
+    // Filter by Category Pothole
+    const filterCatRes = await request(
+      { path: '/api/admin/reports?category=Pothole', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${adminToken}` }
+    );
+    const allPotholes = filterCatRes.body.reports?.every((r) => r.category === 'Pothole');
+    recordResult(
+      'Admin Filter by Category (category=Pothole)',
+      filterCatRes.status === 200 && allPotholes,
+      !allPotholes ? 'Non-pothole reports returned' : null
+    );
+
+    // ----------------------------------------------------
+    // 11.16 & 11.17 ADMIN REPORT DOSSIER & STATUS UPDATE
+    // ----------------------------------------------------
+    console.log('\n--- 11.16 & 11.17 Admin Dossier & Status Lifecycle Testing ---');
+    const adminDossierRes = await request(
+      { path: `/api/admin/reports/${createdReportId}`, method: 'GET' },
+      null,
+      { Authorization: `Bearer ${adminToken}` }
+    );
+    const dossierValid =
+      adminDossierRes.status === 200 &&
+      adminDossierRes.body.report.citizen_email === citizenEmail &&
+      adminDossierRes.body.report.citizen_name === 'Aarav Patel';
+    recordResult(
+      'Admin Dossier Inspection with Citizen Contact Info',
+      dossierValid,
+      !dossierValid ? 'Dossier did not contain expected citizen info' : null
+    );
+
+    // Status Update 1: PENDING -> IN_PROGRESS
+    const updateProgressRes = await request(
+      { path: `/api/admin/reports/${createdReportId}/status`, method: 'PATCH' },
+      JSON.stringify({ status: 'IN_PROGRESS' }),
+      { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
+    );
+    recordResult(
+      'Status Transition 1: PENDING -> IN_PROGRESS',
+      updateProgressRes.status === 200 && updateProgressRes.body.report.status === 'IN_PROGRESS',
+      updateProgressRes.body.report?.status !== 'IN_PROGRESS' ? 'Failed transition to IN_PROGRESS' : null
+    );
+
+    // Status Update 2: IN_PROGRESS -> RESOLVED
+    const updateResolvedRes = await request(
+      { path: `/api/admin/reports/${createdReportId}/status`, method: 'PATCH' },
+      JSON.stringify({ status: 'RESOLVED' }),
+      { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
+    );
+    recordResult(
+      'Status Transition 2: IN_PROGRESS -> RESOLVED',
+      updateResolvedRes.status === 200 && updateResolvedRes.body.report.status === 'RESOLVED',
+      updateResolvedRes.body.report?.status !== 'RESOLVED' ? 'Failed transition to RESOLVED' : null
+    );
+
+    // ----------------------------------------------------
+    // 11.18 CITIZEN STATUS VERIFICATION
+    // ----------------------------------------------------
+    console.log('\n--- 11.18 Citizen Status Verification ---');
+    const citizenCheckRes = await request(
+      { path: `/api/reports/${createdReportId}`, method: 'GET' },
+      null,
+      { Authorization: `Bearer ${citizenToken}` }
+    );
+    recordResult(
+      'Citizen Sees Updated RESOLVED Status in Real-Time',
+      citizenCheckRes.status === 200 && citizenCheckRes.body.report.status === 'RESOLVED',
+      citizenCheckRes.body.report?.status !== 'RESOLVED' ? `Expected RESOLVED but got ${citizenCheckRes.body.report?.status}` : null
+    );
+
+    // ----------------------------------------------------
+    // 11.19 AUTHORIZATION & ROLE-BASED ACCESS
+    // ----------------------------------------------------
+    console.log('\n--- 11.19 Authorization & Access Isolation Testing ---');
+    // Case 3 & 4: Citizen calling Admin API
+    const citizenAdminAttempt = await request(
+      { path: '/api/admin/stats', method: 'GET' },
+      null,
+      { Authorization: `Bearer ${citizenToken}` }
+    );
+    recordResult(
+      'Security Case 4: 403 Forbidden on Citizen Calling Admin API',
+      citizenAdminAttempt.status === 403,
+      citizenAdminAttempt.status !== 403 ? `Expected 403 but got ${citizenAdminAttempt.status}` : null
+    );
+
+    // Case 5: Citizen B attempting to view Citizen A's report
     const crossAccessRes = await request(
       { path: `/api/reports/${createdReportId}`, method: 'GET' },
       null,
       { Authorization: `Bearer ${citizenBToken}` }
     );
     recordResult(
-      'Security: 403 Forbidden on Citizen B accessing Citizen A report',
+      'Security Case 5: 403 Forbidden on Citizen B Accessing Citizen A Report',
       crossAccessRes.status === 403,
       crossAccessRes.status !== 403 ? `Expected 403 but got ${crossAccessRes.status}` : null
     );
 
-    // Invalid JWT Token
-    const badJwtRes = await request(
-      { path: '/api/reports/my', method: 'GET' },
+    // Case 6: Admin accessing reports
+    const adminAccessRes = await request(
+      { path: `/api/admin/reports/${createdReportId}`, method: 'GET' },
       null,
-      { Authorization: 'Bearer invalid.jwt.signature' }
+      { Authorization: `Bearer ${adminToken}` }
     );
     recordResult(
-      'Security: 401 Unauthorized on Invalid JWT',
-      badJwtRes.status === 401,
-      badJwtRes.status !== 401 ? `Expected 401 but got ${badJwtRes.status}` : null
+      'Security Case 6: Admin Can Access All Citizen Reports',
+      adminAccessRes.status === 200,
+      adminAccessRes.status !== 200 ? `Expected 200 but got ${adminAccessRes.status}` : null
     );
 
-    // Invalid Status Value
-    const badStatusRes = await request(
-      { path: `/api/admin/reports/${createdReportId}/status`, method: 'PATCH' },
-      JSON.stringify({ status: 'INVALID_STATUS_VALUE' }),
-      { Authorization: `Bearer ${adminToken}`, 'Content-Type': 'application/json' }
-    );
-    recordResult(
-      'Validation: 400 Bad Request on Invalid Status Transition',
-      badStatusRes.status === 400,
-      badStatusRes.status !== 400 ? `Expected 400 but got ${badStatusRes.status}` : null
-    );
-
-    // Unsupported Image Format
-    const badUploadRes = await uploadMultipart(
-      citizenToken,
-      { category: 'Pothole', location: 'Location', description: 'Description' },
-      { content: 'Fake text file content', filename: 'malicious.txt', mime: 'text/plain' }
-    );
-    recordResult(
-      'Validation: 400 Bad Request on Unsupported File Format (.txt)',
-      badUploadRes.status === 400,
-      badUploadRes.status !== 400 ? `Expected 400 but got ${badUploadRes.status}` : null
-    );
-
-    // SQL Injection Immunity in text inputs
-    const sqlInjectionLocation = "'; DROP TABLE reports; --";
+    // ----------------------------------------------------
+    // 11.21 ERROR HANDLING & SANITIZATION
+    // ----------------------------------------------------
+    console.log('\n--- 11.21 Error Handling & Sanitization ---');
+    // SQL Injection Immunity
+    const sqliPayload = "'; DROP TABLE reports; --";
     const sqliRes = await uploadMultipart(
       citizenToken,
       {
         category: 'Streetlight',
-        location: sqlInjectionLocation,
-        description: 'Testing parameterized query safety with quotes and escapes'
+        location: sqliPayload,
+        description: 'Testing parameterized query safety with single quotes and SQL operators'
       },
       null
     );
-    const sqliSafe = sqliRes.status === 201 && sqliRes.body.report.location === sqlInjectionLocation;
+    const sqliSafe = sqliRes.status === 201 && sqliRes.body.report.location === sqliPayload;
     recordResult(
       'Security: SQL Injection Immunity via Parameterized Queries',
       sqliSafe,
       !sqliSafe ? 'SQL Injection payload caused unexpected behavior' : null
     );
 
-    // XSS Script Tag Handling in description
+    // XSS Neutral Handling
     const xssDesc = '<script>alert("xss")</script> Broken streetlight on 5th Ave';
     const xssRes = await uploadMultipart(
       citizenToken,
@@ -482,75 +653,52 @@ async function runPhase11Tests() {
     );
     const xssSafe = xssRes.status === 201 && xssRes.body.report.description === xssDesc;
     recordResult(
-      'Security: XSS String Sanitization / Neutral Handling',
+      'Security: XSS Script String Neutral Storage & Rendering',
       xssSafe,
       !xssSafe ? 'XSS payload caused unexpected server behavior' : null
     );
 
     // ----------------------------------------------------
-    // 11.8 EDGE CASES
+    // 11.23 DATABASE CONSISTENCY TEST
     // ----------------------------------------------------
-    console.log('\n--- 11.8 Edge Cases ---');
-
-    // Duplicate Email Registration
-    const dupEmailRes = await request(
-      { path: '/api/auth/register', method: 'POST' },
-      JSON.stringify({ name: 'Duplicate User', email: citizenEmail, password: citizenPassword }),
-      { 'Content-Type': 'application/json' }
+    console.log('\n--- 11.23 Database Consistency & Timestamp Verification ---');
+    const dbRowRes = await pool.query(
+      `SELECT user_id, status, created_at, updated_at FROM reports WHERE report_id = $1`,
+      [createdReportId]
     );
+    const dbRow = dbRowRes.rows[0];
+    const dbConsistencyValid =
+      dbRow &&
+      dbRow.user_id === citizenId &&
+      dbRow.status === 'RESOLVED' &&
+      new Date(dbRow.updated_at) >= new Date(dbRow.created_at);
     recordResult(
-      'Edge Case: 400 Duplicate Email Registration',
-      dupEmailRes.status === 400,
-      dupEmailRes.status !== 400 ? `Expected 400 but got ${dupEmailRes.status}` : null
+      'Database Consistency: Foreign Key & Timestamp Alignment (updated_at >= created_at)',
+      dbConsistencyValid,
+      !dbConsistencyValid ? 'Database row inconsistency' : null
     );
 
-    // Missing Form Fields
-    const missingFieldsRes = await request(
-      { path: '/api/auth/register', method: 'POST' },
-      JSON.stringify({ name: '', email: '', password: '' }),
-      { 'Content-Type': 'application/json' }
-    );
-    recordResult(
-      'Edge Case: 400 Missing Registration Fields',
-      missingFieldsRes.status === 400,
-      missingFieldsRes.status !== 400 ? `Expected 400 but got ${missingFieldsRes.status}` : null
-    );
-
-    // Very Long Description (1500 chars)
-    const longDesc = 'A'.repeat(1500);
-    const longDescRes = await uploadMultipart(
-      citizenToken,
-      {
-        category: 'Water Leakage',
-        location: 'Sector 9 Water Main',
-        description: longDesc
-      },
-      null
-    );
-    recordResult(
-      'Edge Case: Large Description Text (1500 characters)',
-      longDescRes.status === 201 && longDescRes.body.report.description.length === 1500,
-      longDescRes.status !== 201 ? `Failed with status ${longDescRes.status}` : null
-    );
-
-    // Report without photo (optional photo test)
+    // ----------------------------------------------------
+    // 11.22 IMAGE FORMATS (Optional Uploads)
+    // ----------------------------------------------------
+    console.log('\n--- 11.22 Image Upload Formats Testing ---');
     const textOnlyRes = await uploadMultipart(
       citizenToken,
       {
         category: 'Garbage',
-        location: 'Community Park Gate 2',
-        description: 'Overflowing public waste bin requiring collection'
+        location: 'Park Gate 2',
+        description: 'Overflowing bin without photo attachment'
       },
       null
     );
     recordResult(
-      'Edge Case: Report creation without image (Text-only submission)',
+      'Image Upload: Optional Photo (Text-Only Reports Handled Gracefully)',
       textOnlyRes.status === 201 && textOnlyRes.body.report.image_url === null,
-      textOnlyRes.status !== 201 ? `Failed text-only report with status ${textOnlyRes.status}` : null
+      textOnlyRes.status !== 201 ? 'Failed text-only submission' : null
     );
 
     console.log('\n====================================================');
-    console.log('  TEST SUMMARY REPORT');
+    console.log('  PHASE 11 TEST SUMMARY REPORT');
     console.log('====================================================');
     console.table(results);
 

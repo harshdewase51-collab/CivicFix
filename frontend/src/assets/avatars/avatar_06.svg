@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg6" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#D1FAE5"/>
+      <stop offset="100%" stop-color="#A7F3D0"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="url(#bg6)"/>
+  <!-- Torso & Clothes -->
+  <path d="M22 100 C22 75 32 68 50 68 C68 68 78 75 78 100 Z" fill="#047857"/>
+  <path d="M42 68 L50 78 L58 68 Z" fill="#FEF3C7"/>
+  <!-- Neck -->
+  <rect x="44" y="55" width="12" height="15" rx="3" fill="#6B4125"/>
+  <!-- Head -->
+  <ellipse cx="50" cy="42" rx="17" ry="20" fill="#7D4F2D"/>
+  <!-- Sleek Bob Hair -->
+  <path d="M28 44 C28 20 40 18 50 18 C60 18 72 20 72 44 C72 58 70 60 68 62 C68 46 64 30 50 30 C36 30 32 46 32 62 C30 60 28 58 28 44 Z" fill="#18181B"/>
+  <!-- Eyes -->
+  <circle cx="43" cy="42" r="2.2" fill="#09090B"/>
+  <circle cx="57" cy="42" r="2.2" fill="#09090B"/>
+  <!-- Smile -->
+  <path d="M45 52 Q50 56 55 52" stroke="#3F1D0B" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+  <!-- Gold Studs -->
+  <circle cx="31" cy="48" r="1.6" fill="#FBBF24"/>
+  <circle cx="69" cy="48" r="1.6" fill="#FBBF24"/>
+</svg>

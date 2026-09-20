@@ -21,7 +21,10 @@ async function authenticateToken(req, res, next) {
     const decoded = jwt.verify(token, JWT_SECRET);
     
     // Cross-verify with active database record to ensure user still exists and role is current
-    const userRes = await query('SELECT id, name, email, role FROM users WHERE id = $1', [decoded.id]);
+    const userRes = await query(
+      'SELECT id, name, email, role, phone, area, avatar_url, avatar_type, avatar_preset, created_at FROM users WHERE id = $1',
+      [decoded.id]
+    );
     
     if (userRes.rows.length === 0) {
       return res.status(401).json({

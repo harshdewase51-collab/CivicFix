@@ -117,8 +117,8 @@ cd civicfix
 Inside `server/`, create a `.env` file based on `.env.example`:
 ```env
 PORT=5000
-DATABASE_URL=postgresql://postgres:Harsh@123@localhost:5432/civicfix
-JWT_SECRET=civicfix_secret_jwt_key_hackathon_2026
+DATABASE_URL=postgresql://postgres:<your_password>@localhost:5432/civicfix
+JWT_SECRET=your_jwt_secret_key_here
 CLIENT_URL=http://localhost:5173
 ```
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { reportService, formatDate } from '@civicfix/client';
 import StatusBadge from '../components/StatusBadge';
+import CategoryIcon from '../components/CategoryIcon';
 import { PlusCircle, Search, MapPin, Calendar, FileText, ArrowRight } from 'lucide-react';
 
 export default function MyReportsPage() {
@@ -96,12 +97,40 @@ export default function MyReportsPage() {
 
       {/* Reports Grid/List */}
       {loading ? (
-        <div style={{ padding: '3rem', textAlign: 'center', color: 'var(--text-muted)' }}>
-          Loading your reports...
+        <div style={{ padding: '4rem', textAlign: 'center', color: 'var(--text-muted)' }}>
+          <div style={{ display: 'inline-block', width: '32px', height: '32px', border: '3px solid var(--border)', borderTopColor: 'var(--primary)', borderRadius: '50%', animation: 'spin 1s linear infinite', marginBottom: '0.75rem' }} />
+          <p style={{ fontWeight: 600 }}>Loading your civic reports...</p>
         </div>
       ) : error ? (
         <div className="alert alert-danger">{error}</div>
+      ) : reports.length === 0 ? (
+        /* PART 21: Citizen with no reports */
+        <div className="card" style={{ padding: '3.5rem 1.5rem', textAlign: 'center' }}>
+          <div style={{
+            width: '64px',
+            height: '64px',
+            borderRadius: 'var(--radius-full)',
+            background: 'var(--bg-muted)',
+            display: 'inline-flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: 'var(--primary)',
+            marginBottom: '1.25rem'
+          }}>
+            <FileText size={32} />
+          </div>
+          <h3 style={{ fontSize: '1.3rem', fontWeight: 800, marginBottom: '0.5rem', color: 'var(--text-main)' }}>
+            No civic reports yet.
+          </h3>
+          <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem', marginBottom: '1.5rem', maxWidth: '420px', margin: '0 auto 1.5rem auto' }}>
+            Report a local issue and track its progress here.
+          </p>
+          <Link to="/report" className="btn btn-primary">
+            <PlusCircle size={16} /> Report a Problem
+          </Link>
+        </div>
       ) : filteredReports.length === 0 ? (
+        /* PART 21: Search with no results */
         <div className="card" style={{ padding: '3.5rem 1rem', textAlign: 'center' }}>
           <div style={{
             width: '60px',
@@ -114,10 +143,10 @@ export default function MyReportsPage() {
             color: 'var(--text-subtle)',
             marginBottom: '1rem'
           }}>
-            <FileText size={28} />
+            <Search size={28} />
           </div>
-          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.4rem' }}>
-            No matching reports found
+          <h3 style={{ fontSize: '1.2rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-main)' }}>
+            No matching reports found.
           </h3>
           <p style={{ color: 'var(--text-muted)', fontSize: '0.95rem' }}>
             Try adjusting your search criteria or status filter.
@@ -135,9 +164,12 @@ export default function MyReportsPage() {
                   <StatusBadge status={item.status} />
                 </div>
 
-                <h3 style={{ fontSize: '1.15rem', fontWeight: 700, marginBottom: '0.4rem', color: 'var(--text-main)' }}>
-                  {item.category}
-                </h3>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.45rem', marginBottom: '0.5rem' }}>
+                  <CategoryIcon category={item.category} size={18} color="var(--primary)" />
+                  <h3 style={{ fontSize: '1.15rem', fontWeight: 700, color: 'var(--text-main)', margin: 0 }}>
+                    {item.category}
+                  </h3>
+                </div>
 
                 <p style={{
                   color: 'var(--text-muted)',

@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg5" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#E0F2FE"/>
+      <stop offset="100%" stop-color="#BAE6FD"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="url(#bg5)"/>
+  <!-- Hoodie & Shoulders -->
+  <path d="M22 100 C22 74 30 66 50 66 C70 66 78 74 78 100 Z" fill="#0284C7"/>
+  <!-- Hood Interior / Neck -->
+  <path d="M38 67 C38 80 62 80 62 67 Z" fill="#0369A1"/>
+  <rect x="44" y="54" width="12" height="15" rx="3" fill="#D49E74"/>
+  <!-- Head -->
+  <ellipse cx="50" cy="41" rx="17" ry="20" fill="#E8B58E"/>
+  <!-- Dark Wavy Hair -->
+  <path d="M30 40 C30 20 40 15 50 15 C60 15 70 20 70 40 C65 32 60 26 50 26 C40 26 34 32 30 40 Z" fill="#172554"/>
+  <path d="M33 28 Q40 20 50 22 Q60 18 68 28" fill="#172554"/>
+  <!-- Eyes -->
+  <circle cx="43" cy="40" r="2.2" fill="#0F172A"/>
+  <circle cx="57" cy="40" r="2.2" fill="#0F172A"/>
+  <!-- Smile -->
+  <path d="M45 50 Q50 54 55 50" stroke="#7C2D12" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+</svg>

@@ -157,13 +157,17 @@ export default function AdminReportDetailsPage() {
           <div style={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--text-muted)', textAlign: 'center', marginBottom: '0.5rem' }}>
             Current Citizen-Facing Resolution Timeline
           </div>
-          <Timeline status={report.status} />
+          <Timeline
+            status={report.status}
+            createdAt={report.created_at}
+            updatedAt={report.updated_at}
+          />
         </div>
 
         {/* Administrative Action Bar */}
         <div style={{
-          backgroundColor: '#F8FAFC',
-          border: '1px solid #E2E8F0',
+          backgroundColor: 'var(--bg-muted)',
+          border: '1px solid var(--border)',
           borderRadius: 'var(--radius-md)',
           padding: '1.5rem',
           marginBottom: '2rem'
@@ -217,7 +221,7 @@ export default function AdminReportDetailsPage() {
             <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
               Reporting Citizen
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '1rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontWeight: 700, fontSize: '1rem', color: 'var(--text-main)' }}>
               <User size={16} color="var(--primary)" /> {report.citizen_name || 'Anonymous Resident'}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.9rem', marginTop: '0.3rem' }}>
@@ -235,7 +239,7 @@ export default function AdminReportDetailsPage() {
             <div style={{ fontSize: '0.8rem', fontWeight: 700, textTransform: 'uppercase', color: 'var(--text-muted)', marginBottom: '0.5rem' }}>
               Incident Details
             </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem' }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem', color: 'var(--text-main)' }}>
               <MapPin size={15} color="var(--primary)" /> <strong>{report.location}</strong>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
@@ -249,16 +253,17 @@ export default function AdminReportDetailsPage() {
 
         {/* Description */}
         <div style={{ marginBottom: '2rem' }}>
-          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem' }}>
+          <h2 style={{ fontSize: '1.1rem', fontWeight: 700, marginBottom: '0.5rem', color: 'var(--text-main)' }}>
             Complaint Description
           </h2>
           <div style={{
             padding: '1.25rem',
             borderRadius: 'var(--radius-sm)',
             border: '1px solid var(--border)',
-            backgroundColor: '#FFFFFF',
+            backgroundColor: 'var(--bg-surface)',
             lineHeight: 1.6,
-            whiteSpace: 'pre-line'
+            whiteSpace: 'pre-line',
+            color: 'var(--text-main)'
           }}>
             {report.description}
           </div>

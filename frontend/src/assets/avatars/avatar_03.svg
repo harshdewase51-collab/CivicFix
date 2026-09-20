@@ -1,0 +1,31 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" width="100%" height="100%">
+  <defs>
+    <linearGradient id="bg3" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#FEF3C7"/>
+      <stop offset="100%" stop-color="#FDE68A"/>
+    </linearGradient>
+  </defs>
+  <circle cx="50" cy="50" r="50" fill="url(#bg3)"/>
+  <!-- Torso & Clothes -->
+  <path d="M22 100 C22 75 32 68 50 68 C68 68 78 75 78 100 Z" fill="#D97706"/>
+  <path d="M44 68 L50 78 L56 68 Z" fill="#1F2937"/>
+  <!-- Neck -->
+  <rect x="44" y="55" width="12" height="15" rx="3" fill="#8D5B3A"/>
+  <!-- Head -->
+  <ellipse cx="50" cy="42" rx="18" ry="21" fill="#A26B45"/>
+  <!-- Short Curly Hair -->
+  <path d="M30 38 C30 20 40 16 50 16 C60 16 70 20 70 38 C68 32 64 30 58 30 C52 30 48 26 42 28 C36 30 32 34 30 38 Z" fill="#18181B"/>
+  <circle cx="34" cy="24" r="5" fill="#18181B"/>
+  <circle cx="44" cy="19" r="5" fill="#18181B"/>
+  <circle cx="56" cy="19" r="5" fill="#18181B"/>
+  <circle cx="66" cy="24" r="5" fill="#18181B"/>
+  <!-- Glasses -->
+  <rect x="36" y="36" width="12" height="10" rx="3" fill="none" stroke="#1F2937" stroke-width="1.8"/>
+  <rect x="52" y="36" width="12" height="10" rx="3" fill="none" stroke="#1F2937" stroke-width="1.8"/>
+  <line x1="48" y1="41" x2="52" y2="41" stroke="#1F2937" stroke-width="1.8"/>
+  <!-- Eyes -->
+  <circle cx="42" cy="41" r="1.8" fill="#18181B"/>
+  <circle cx="58" cy="41" r="1.8" fill="#18181B"/>
+  <!-- Smile -->
+  <path d="M46 52 Q50 56 54 52" stroke="#451A03" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+</svg>

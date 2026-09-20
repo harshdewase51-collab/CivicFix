@@ -22,7 +22,7 @@ Connection configuration is managed via environment variables:
 | `PGHOST` | Hostname (fallback if no `DATABASE_URL`) | `localhost` |
 | `PGPORT` | Port number | `5432` |
 | `PGUSER` | Database user | `postgres` |
-| `PGPASSWORD` | Database password | `Harsh@123` |
+| `PGPASSWORD` | Database password | `<your_password>` |
 | `PGDATABASE` | Database name | `civicfix` |
 
 For cloud connections (e.g., Neon), SSL mode is enabled (`ssl: { rejectUnauthorized: false }`). For local development, SSL is automatically disabled when connecting to localhost.

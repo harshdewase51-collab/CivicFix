@@ -9,6 +9,11 @@ CREATE TABLE IF NOT EXISTS users (
   email VARCHAR(255) NOT NULL UNIQUE,
   password_hash TEXT NOT NULL,
   role VARCHAR(20) NOT NULL DEFAULT 'citizen' CHECK (role IN ('citizen', 'admin')),
+  phone VARCHAR(30),
+  area VARCHAR(150),
+  avatar_url VARCHAR(500),
+  avatar_type VARCHAR(20) DEFAULT 'preset',
+  avatar_preset VARCHAR(50) DEFAULT 'avatar_01',
   created_at TIMESTAMPTZ NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 

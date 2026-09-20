@@ -40,6 +40,28 @@ export const AuthProvider = ({ children }) => {
     return data.user;
   };
 
+  const updateProfile = async (profileData) => {
+    const updatedUser = await authService.updateProfile(profileData);
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
+  const uploadAvatar = async (formData) => {
+    const updatedUser = await authService.uploadAvatar(formData);
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
+  const removeAvatar = async () => {
+    const updatedUser = await authService.removeAvatar();
+    setUser(updatedUser);
+    return updatedUser;
+  };
+
+  const changePassword = async (passwordData) => {
+    return await authService.changePassword(passwordData);
+  };
+
   const logout = () => {
     authService.logout();
     setUser(null);
@@ -57,6 +79,10 @@ export const AuthProvider = ({ children }) => {
         loading,
         login,
         register,
+        updateProfile,
+        uploadAvatar,
+        removeAvatar,
+        changePassword,
         logout,
         isAdmin,
         isCitizen,
@@ -66,6 +92,7 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
+
 };
 
 export const useAuth = () => {

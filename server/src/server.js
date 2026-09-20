@@ -21,6 +21,7 @@ app.use(
 // CORS configuration
 const allowedOrigins = [
   process.env.CLIENT_URL,
+  process.env.CORS_ORIGIN,
   'http://localhost:5173',
   'http://127.0.0.1:5173'
 ].filter(Boolean);
@@ -29,7 +30,12 @@ app.use(
   cors({
     origin: (origin, callback) => {
       // Allow requests with no origin (e.g., mobile apps, curl, server-to-server)
-      if (!origin || allowedOrigins.includes(origin) || process.env.NODE_ENV !== 'production') {
+      if (
+        !origin ||
+        allowedOrigins.includes(origin) ||
+        (origin && origin.endsWith('.vercel.app')) ||
+        process.env.NODE_ENV !== 'production'
+      ) {
         return callback(null, true);
       }
       return callback(new Error('CORS policy: Not allowed by CORS'));
@@ -43,14 +49,19 @@ app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
 // Serve Uploaded Evidence Photos
-const uploadsPath = path.join(__dirname, '../uploads');
+const uploadsPath = process.env.VERCEL
+  ? path.join(require('os').tmpdir(), 'uploads')
+  : path.join(__dirname, '../uploads');
 app.use('/uploads', express.static(uploadsPath));
 
 // Health Check Endpoint
 app.get('/api/health', (req, res) => {
+  const dbConfigured = !!process.env.DATABASE_URL || process.env.NODE_ENV !== 'production';
   res.json({
     success: true,
-    message: 'CivicFix API is running'
+    message: 'CivicFix API is running',
+    environment: process.env.NODE_ENV || 'development',
+    database_configured: dbConfigured
   });
 });
 
