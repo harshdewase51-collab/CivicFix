@@ -62,9 +62,11 @@ app.get('/api/health', async (req, res) => {
   let latencyMs = null;
   let dbHostType = 'none';
 
+  let dbHostname = null;
   if (process.env.DATABASE_URL) {
     try {
       const u = new URL(process.env.DATABASE_URL);
+      dbHostname = u.hostname;
       if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
         dbHostType = 'localhost';
       } else if (u.hostname.includes('neon.tech')) {
@@ -102,6 +104,7 @@ app.get('/api/health', async (req, res) => {
     message: 'CivicFix API is running',
     environment: process.env.NODE_ENV || 'development',
     database_configured: dbConfigured,
+    database_host: dbHostname,
     database_host_type: dbHostType,
     database_status: dbStatus,
     database_latency_ms: latencyMs,
