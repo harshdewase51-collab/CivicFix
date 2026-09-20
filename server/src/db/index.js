@@ -25,12 +25,35 @@ function optimizeConnectionString(urlStr) {
   }
 }
 
-const rawConnectionString = process.env.DATABASE_URL;
-const isInvalidWebUrl = rawConnectionString && (
-  rawConnectionString.startsWith('http://') ||
-  rawConnectionString.startsWith('https://') ||
-  rawConnectionString.includes('console.neon.tech')
-);
+function getActiveConnectionString() {
+  const candidates = [
+    { name: 'DATABASE_URL', val: process.env.DATABASE_URL },
+    { name: 'POSTGRES_URL', val: process.env.POSTGRES_URL },
+    { name: 'POSTGRES_URL_NON_POOLING', val: process.env.POSTGRES_URL_NON_POOLING },
+    { name: 'NEON_DATABASE_URL', val: process.env.NEON_DATABASE_URL }
+  ];
+
+  // First priority: any variable starting with postgresql:// or postgres://
+  for (const c of candidates) {
+    if (c.val && (c.val.startsWith('postgresql://') || c.val.startsWith('postgres://'))) {
+      return { name: c.name, connectionString: c.val, isInvalidWebUrl: false };
+    }
+  }
+
+  // Fallback: check if any variable was set (even if invalid web URL)
+  for (const c of candidates) {
+    if (c.val) {
+      const isInvalid = c.val.startsWith('http://') || c.val.startsWith('https://') || c.val.includes('console.neon.tech');
+      return { name: c.name, connectionString: c.val, isInvalidWebUrl: isInvalid };
+    }
+  }
+
+  return { name: null, connectionString: null, isInvalidWebUrl: false };
+}
+
+const activeDb = getActiveConnectionString();
+const rawConnectionString = activeDb.connectionString;
+const isInvalidWebUrl = activeDb.isInvalidWebUrl;
 
 const connectionString = isInvalidWebUrl ? null : optimizeConnectionString(rawConnectionString);
 const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;

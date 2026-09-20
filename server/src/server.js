@@ -57,16 +57,47 @@ app.use('/uploads', express.static(uploadsPath));
 
 // Health Check Endpoint
 app.get('/api/health', async (req, res) => {
-  const dbConfigured = !!process.env.DATABASE_URL || process.env.NODE_ENV !== 'production';
+  const candidates = [
+    { name: 'DATABASE_URL', val: process.env.DATABASE_URL },
+    { name: 'POSTGRES_URL', val: process.env.POSTGRES_URL },
+    { name: 'POSTGRES_URL_NON_POOLING', val: process.env.POSTGRES_URL_NON_POOLING },
+    { name: 'NEON_DATABASE_URL', val: process.env.NEON_DATABASE_URL }
+  ];
+
+  let resolvedDbVar = null;
+  let activeConnectionString = null;
+  let isInvalidWebUrl = false;
+
+  for (const c of candidates) {
+    if (c.val && (c.val.startsWith('postgresql://') || c.val.startsWith('postgres://'))) {
+      resolvedDbVar = c.name;
+      activeConnectionString = c.val;
+      isInvalidWebUrl = false;
+      break;
+    }
+  }
+
+  if (!activeConnectionString) {
+    for (const c of candidates) {
+      if (c.val) {
+        resolvedDbVar = c.name;
+        activeConnectionString = c.val;
+        isInvalidWebUrl = c.val.startsWith('http://') || c.val.startsWith('https://') || c.val.includes('console.neon.tech');
+        break;
+      }
+    }
+  }
+
+  const dbConfigured = !!activeConnectionString || process.env.NODE_ENV !== 'production';
   let dbStatus = 'untested';
   let latencyMs = null;
   let dbHostType = 'none';
-
   let dbHostname = null;
   let dbUrlInfo = null;
-  if (process.env.DATABASE_URL) {
+
+  if (activeConnectionString) {
     try {
-      const u = new URL(process.env.DATABASE_URL);
+      const u = new URL(activeConnectionString);
       dbHostname = u.hostname;
       dbUrlInfo = {
         protocol: u.protocol,
@@ -89,15 +120,9 @@ app.get('/api/health', async (req, res) => {
   let dbError = null;
 
   if (dbConfigured) {
-    const isInvalidWebUrl = process.env.DATABASE_URL && (
-      process.env.DATABASE_URL.startsWith('http://') ||
-      process.env.DATABASE_URL.startsWith('https://') ||
-      process.env.DATABASE_URL.includes('console.neon.tech')
-    );
-
     if (isInvalidWebUrl) {
       dbStatus = 'invalid_connection_string';
-      dbError = 'DATABASE_URL is set to a Neon web console URL (https://console.neon.tech/...) instead of a valid PostgreSQL connection string (postgresql://user:password@ep-xyz.region.aws.neon.tech/dbname?sslmode=require).';
+      dbError = `${resolvedDbVar} is set to a Neon web console URL (https://console.neon.tech/...) instead of a valid PostgreSQL connection string (postgresql://user:password@ep-xyz.region.aws.neon.tech/dbname?sslmode=require).`;
     } else {
       try {
         const { pool } = require('./db');
@@ -117,6 +142,8 @@ app.get('/api/health', async (req, res) => {
     }
   }
 
+  const availableDbKeys = candidates.filter(c => !!c.val).map(c => c.name);
+
   res.json({
     success: true,
     message: 'CivicFix API is running',
@@ -125,6 +152,8 @@ app.get('/api/health', async (req, res) => {
     database_host: dbHostname,
     database_host_type: dbHostType,
     database_url_info: dbUrlInfo,
+    resolved_db_variable: resolvedDbVar,
+    available_db_variables: availableDbKeys,
     database_status: dbStatus,
     database_latency_ms: latencyMs,
     database_error: dbError
