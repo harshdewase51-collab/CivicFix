@@ -3,6 +3,11 @@
   "version": "1.0.0",
   "private": true,
   "description": "CivicFix — Hackathon civic issue reporting and tracking platform",
+  "workspaces": [
+    "frontend",
+    "client",
+    "server"
+  ],
   "scripts": {
     "dev:server": "npm --prefix server run dev",
     "dev:frontend": "npm --prefix frontend run dev",
@@ -16,6 +21,16 @@
     "test:phase11": "node server/src/scripts/test-suite-phase11.js",
     "test": "npm run test:backend && npm run test:e2e && npm run test:phase11",
     "install:all": "npm --prefix server install && npm --prefix client install && npm --prefix frontend install"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "pg": "^8.13.3"
   },
   "keywords": ["civic-tech", "react", "express", "postgresql", "hackathon"],
   "author": "CivicFix Team",
