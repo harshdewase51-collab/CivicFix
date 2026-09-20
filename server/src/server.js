@@ -94,7 +94,7 @@ app.use((err, req, res, next) => {
 });
 
 // Start Server (only if executed directly, not imported in tests or serverless)
-if (process.env.NODE_ENV !== 'test') {
+if (require.main === module) {
   app.listen(PORT, () => {
     console.log(`🚀 CivicFix Server listening on port ${PORT}`);
     console.log(`📡 Health check available at http://localhost:${PORT}/api/health`);

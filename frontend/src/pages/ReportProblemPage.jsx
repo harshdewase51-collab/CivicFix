@@ -267,15 +267,25 @@ export default function ReportProblemPage() {
               </div>
             </div>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.65rem' }}>
               <button
+                id="view-report-btn"
                 className="btn btn-primary"
                 onClick={() => navigate(`/reports/${successReport.report_id}`)}
               >
-                Track Report <ArrowRight size={16} />
+                View Report <ArrowRight size={16} />
               </button>
               <button
+                id="go-to-my-reports-btn"
+                className="btn btn-secondary"
+                onClick={() => navigate('/reports')}
+              >
+                Go to My Reports
+              </button>
+              <button
+                id="submit-another-btn"
                 className="btn btn-secondary btn-sm"
+                style={{ marginTop: '0.25rem' }}
                 onClick={() => {
                   setSuccessReport(null);
                   setLocation('');

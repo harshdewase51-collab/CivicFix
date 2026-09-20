@@ -56,15 +56,21 @@ CivicFix/
 │
 ├── client/                     # Dedicated Client API Communication Layer
 │   ├── api/
-│   │   └── apiClient.js        # Axios instance, base URL, JWT header injection
+│   │   ├── apiClient.js        # Axios instance, base URL, JWT header injection
+│   │   ├── axios.js            # Centralized Axios export
+│   │   ├── authApi.js          # Authentication API methods
+│   │   ├── reportApi.js        # Citizen report API methods
+│   │   └── adminApi.js         # Administrative management API methods
 │   ├── services/
 │   │   ├── authService.js      # Login, registration, session verification
 │   │   ├── reportService.js    # Create report, citizen report queries
 │   │   └── adminService.js     # Admin report triage, filtering, status updates
 │   ├── auth/
-│   │   └── tokenStorage.js     # LocalStorage token & user state manager
+│   │   ├── tokenStorage.js     # LocalStorage token & user state manager
+│   │   └── authUtils.js        # Auth session utility methods
 │   ├── utils/
 │   │   └── formatters.js       # Date, status, and category formatters
+│   ├── index.js                # Unified client package entry point
 │   └── package.json            # Client service module
 │
 ├── server/                     # Backend API & Business Logic
@@ -178,11 +184,17 @@ For rapid hackathon evaluation, the seed script provisions:
 
 Execute automated test suites:
 ```bash
-# Verify backend APIs (16 assertions)
+# 1. Run all test suites (Backend, E2E Workflow, and Phase 11 Security Matrix)
+npm test
+
+# 2. Verify backend APIs (21 assertions)
 npm run test:backend
 
-# Verify master 17-step end-to-end user flow
+# 3. Verify master 17-step end-to-end user flow
 npm run test:e2e
+
+# 4. Verify Phase 11 security isolation, validation, and edge case matrix (30 assertions)
+npm run test:phase11
 ```
 
 ---
