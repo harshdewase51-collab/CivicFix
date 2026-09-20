@@ -77,6 +77,8 @@ app.get('/api/health', async (req, res) => {
     }
   }
 
+  let dbError = null;
+
   if (dbConfigured) {
     try {
       const { pool } = require('./db');
@@ -90,6 +92,7 @@ app.get('/api/health', async (req, res) => {
       }
     } catch (err) {
       dbStatus = 'error';
+      dbError = err?.message || String(err);
       console.error('Health check database ping notice:', err.message);
     }
   }
@@ -101,7 +104,8 @@ app.get('/api/health', async (req, res) => {
     database_configured: dbConfigured,
     database_host_type: dbHostType,
     database_status: dbStatus,
-    database_latency_ms: latencyMs
+    database_latency_ms: latencyMs,
+    database_error: dbError
   });
 });
 

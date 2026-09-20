@@ -3,7 +3,30 @@ const { Pool } = require('pg');
 require('dotenv').config();
 require('dotenv').config({ path: path.join(__dirname, '../../.env') });
 
-const connectionString = process.env.DATABASE_URL;
+function optimizeConnectionString(urlStr) {
+  if (!urlStr) return urlStr;
+  try {
+    const u = new URL(urlStr);
+    // If it's a Neon endpoint without -pooler, add -pooler for PgBouncer & IPv4 compatibility
+    if (u.hostname.includes('.neon.tech') && !u.hostname.includes('-pooler')) {
+      const parts = u.hostname.split('.');
+      if (parts[0].startsWith('ep-')) {
+        parts[0] = parts[0] + '-pooler';
+        u.hostname = parts.join('.');
+      }
+    }
+    // Ensure sslmode=require is set for cloud connections
+    if (u.hostname.includes('.neon.tech') && !u.searchParams.has('sslmode')) {
+      u.searchParams.set('sslmode', 'require');
+    }
+    return u.toString();
+  } catch {
+    return urlStr;
+  }
+}
+
+const rawConnectionString = process.env.DATABASE_URL;
+const connectionString = optimizeConnectionString(rawConnectionString);
 const isProduction = process.env.NODE_ENV === 'production' || !!process.env.VERCEL;
 
 const isLocalhost = connectionString && (
@@ -23,11 +46,11 @@ if (connectionString) {
   pool = new Pool({
     connectionString,
     ssl: isCloud ? { rejectUnauthorized: false } : false,
-    connectionTimeoutMillis: 5000,
-    idleTimeoutMillis: 10000,
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 15000,
     max: 5,
     keepAlive: true,
-    statement_timeout: 8000
+    statement_timeout: 10000
   });
 } else if (!isProduction) {
   // Local development fallback only
