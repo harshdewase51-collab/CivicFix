@@ -63,10 +63,17 @@ app.get('/api/health', async (req, res) => {
   let dbHostType = 'none';
 
   let dbHostname = null;
+  let dbUrlInfo = null;
   if (process.env.DATABASE_URL) {
     try {
       const u = new URL(process.env.DATABASE_URL);
       dbHostname = u.hostname;
+      dbUrlInfo = {
+        protocol: u.protocol,
+        pathname: u.pathname,
+        hasPort: !!u.port,
+        hasUser: !!u.username
+      };
       if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
         dbHostType = 'localhost';
       } else if (u.hostname.includes('neon.tech')) {
@@ -106,6 +113,7 @@ app.get('/api/health', async (req, res) => {
     database_configured: dbConfigured,
     database_host: dbHostname,
     database_host_type: dbHostType,
+    database_url_info: dbUrlInfo,
     database_status: dbStatus,
     database_latency_ms: latencyMs,
     database_error: dbError
