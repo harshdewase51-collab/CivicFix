@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../services/api';
+import { reportService, formatDate } from '@civicfix/client';
 import StatusBadge from '../components/StatusBadge';
 import { PlusCircle, Search, MapPin, Calendar, FileText, ArrowRight } from 'lucide-react';
 
@@ -15,9 +15,9 @@ export default function MyReportsPage() {
     async function loadReports() {
       try {
         setLoading(true);
-        const res = await api.get('/reports/my');
-        if (res.data.success) {
-          setReports(res.data.reports || []);
+        const res = await reportService.getMyReports();
+        if (res.success) {
+          setReports(res.reports || []);
         }
       } catch (err) {
         setError('Failed to fetch reports. Please try again.');
@@ -159,7 +159,7 @@ export default function MyReportsPage() {
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
                     <Calendar size={14} />
-                    <span>Submitted on {new Date(item.created_at).toLocaleDateString()}</span>
+                    <span>Submitted on {formatDate(item.created_at)}</span>
                   </div>
                 </div>
               </div>

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import api from '../services/api';
+import { reportService, formatDate } from '@civicfix/client';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import { PlusCircle, FileText, Clock, Wrench, CheckCircle, ArrowRight, MapPin, Calendar } from 'lucide-react';
@@ -16,9 +16,9 @@ export default function CitizenDashboard() {
     async function fetchMyReports() {
       try {
         setLoading(true);
-        const res = await api.get('/reports/my');
-        if (res.data.success) {
-          setReports(res.data.reports || []);
+        const res = await reportService.getMyReports();
+        if (res.success) {
+          setReports(res.reports || []);
         }
       } catch (err) {
         setError('Failed to load your reports. Please refresh.');
@@ -164,7 +164,7 @@ export default function CitizenDashboard() {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                         <Calendar size={13} />
-                        <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                        <span>{formatDate(item.created_at)}</span>
                       </div>
                     </td>
                     <td>

@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../services/api';
+import { adminService, formatDateTime } from '@civicfix/client';
 import StatusBadge from '../components/StatusBadge';
 import Timeline from '../components/Timeline';
 import { 
@@ -31,10 +31,10 @@ export default function AdminReportDetailsPage() {
     try {
       setLoading(true);
       setError('');
-      const res = await api.get(`/admin/reports/${id}`);
-      if (res.data.success && res.data.report) {
-        setReport(res.data.report);
-        setSelectedStatus(res.data.report.status);
+      const res = await adminService.getAdminReportById(id);
+      if (res.success && res.report) {
+        setReport(res.report);
+        setSelectedStatus(res.report.status);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to load report dossier.');
@@ -55,13 +55,11 @@ export default function AdminReportDetailsPage() {
 
     try {
       setUpdating(true);
-      const res = await api.patch(`/admin/reports/${id}/status`, {
-        status: selectedStatus
-      });
+      const res = await adminService.updateReportStatus(id, selectedStatus);
 
-      if (res.data.success) {
+      if (res.success) {
         setSuccessMsg(`Status successfully updated to ${selectedStatus.replace('_', ' ')}.`);
-        setReport(res.data.report);
+        setReport(res.report);
       }
     } catch (err) {
       setError(err.response?.data?.message || 'Failed to update report status.');
@@ -241,10 +239,10 @@ export default function AdminReportDetailsPage() {
               <MapPin size={15} color="var(--primary)" /> <strong>{report.location}</strong>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.3rem' }}>
-              <Calendar size={14} /> Created: {new Date(report.created_at).toLocaleString()}
+              <Calendar size={14} /> Created: {formatDateTime(report.created_at)}
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-muted)', fontSize: '0.85rem', marginTop: '0.2rem' }}>
-              <Clock size={14} /> Modified: {new Date(report.updated_at).toLocaleString()}
+              <Clock size={14} /> Modified: {formatDateTime(report.updated_at)}
             </div>
           </div>
         </div>

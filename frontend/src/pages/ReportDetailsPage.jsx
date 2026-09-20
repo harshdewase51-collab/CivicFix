@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import api from '../services/api';
+import { reportService, formatDateTime } from '@civicfix/client';
 import StatusBadge from '../components/StatusBadge';
 import Timeline from '../components/Timeline';
 import { ArrowLeft, MapPin, Calendar, Clock, AlertCircle, ImageIcon } from 'lucide-react';
@@ -17,9 +17,9 @@ export default function ReportDetailsPage() {
     async function loadReport() {
       try {
         setLoading(true);
-        const res = await api.get(`/reports/${id}`);
-        if (res.data.success && res.data.report) {
-          setReport(res.data.report);
+        const res = await reportService.getReportById(id);
+        if (res.success && res.report) {
+          setReport(res.report);
         }
       } catch (err) {
         setError(err.response?.data?.message || 'Failed to load report details.');
@@ -122,7 +122,7 @@ export default function ReportDetailsPage() {
               <Calendar size={14} /> Submitted Date
             </div>
             <div style={{ fontSize: '0.95rem', fontWeight: 600, marginTop: '0.2rem' }}>
-              {new Date(report.created_at).toLocaleString()}
+              {formatDateTime(report.created_at)}
             </div>
           </div>
 
@@ -131,7 +131,7 @@ export default function ReportDetailsPage() {
               <Clock size={14} /> Last Updated
             </div>
             <div style={{ fontSize: '0.95rem', fontWeight: 600, marginTop: '0.2rem' }}>
-              {new Date(report.updated_at).toLocaleString()}
+              {formatDateTime(report.updated_at)}
             </div>
           </div>
         </div>

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
-import { Upload, AlertCircle, CheckCircle2, MapPin, ArrowRight, ShieldCheck } from 'lucide-react';
+import { reportService } from '@civicfix/client';
+import { Upload, AlertCircle, CheckCircle2, ArrowRight } from 'lucide-react';
 
 const CATEGORIES = [
   'Pothole',
@@ -58,12 +58,10 @@ export default function ReportProblemPage() {
         formData.append('image', file);
       }
 
-      const res = await api.post('/reports', formData, {
-        headers: { 'Content-Type': 'multipart/form-data' }
-      });
+      const res = await reportService.createReport(formData);
 
-      if (res.data.success && res.data.report) {
-        setSuccessReport(res.data.report);
+      if (res.success && res.report) {
+        setSuccessReport(res.report);
       }
     } catch (err) {
       console.error(err);
@@ -117,7 +115,7 @@ export default function ReportProblemPage() {
             <label className="form-label" htmlFor="problem-location">
               Specific Location <span style={{ color: 'var(--danger-text)' }}>*</span>
             </label>
-            <div style={{ position: 'relative' }}>
+            <div>
               <input
                 id="problem-location"
                 type="text"

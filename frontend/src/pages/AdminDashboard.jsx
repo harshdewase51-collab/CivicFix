@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import api from '../services/api';
+import { adminService, formatDate } from '@civicfix/client';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
 import { 
@@ -9,11 +9,9 @@ import {
   Wrench, 
   CheckCircle, 
   Search, 
-  Filter, 
   RefreshCw, 
   MapPin, 
   Calendar,
-  User,
   ShieldCheck,
   ExternalLink
 } from 'lucide-react';
@@ -45,15 +43,15 @@ export default function AdminDashboard() {
       setError('');
 
       const [statsRes, reportsRes] = await Promise.all([
-        api.get('/admin/stats'),
-        api.get('/admin/reports')
+        adminService.getStats(),
+        adminService.getAllReports()
       ]);
 
-      if (statsRes.data.success) {
-        setStats(statsRes.data.stats);
+      if (statsRes.success) {
+        setStats(statsRes.stats);
       }
-      if (reportsRes.data.success) {
-        setReports(reportsRes.data.reports || []);
+      if (reportsRes.success) {
+        setReports(reportsRes.reports || []);
       }
     } catch (err) {
       console.error(err);
@@ -164,7 +162,7 @@ export default function AdminDashboard() {
           alignItems: 'center'
         }}>
           {/* Search Box */}
-          <div style={{ position: 'relative' }}>
+          <div>
             <input
               type="text"
               className="form-control"
@@ -296,7 +294,7 @@ export default function AdminDashboard() {
                     <td>
                       <div style={{ display: 'flex', alignItems: 'center', gap: '0.3rem', color: 'var(--text-muted)', fontSize: '0.85rem' }}>
                         <Calendar size={13} />
-                        <span>{new Date(item.created_at).toLocaleDateString()}</span>
+                        <span>{formatDate(item.created_at)}</span>
                       </div>
                     </td>
                     <td>
