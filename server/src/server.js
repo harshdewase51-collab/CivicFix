@@ -1,8 +1,9 @@
+const path = require('path');
 require('dotenv').config();
+require('dotenv').config({ path: path.join(__dirname, '../.env') });
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
-const path = require('path');
 
 const authRoutes = require('./routes/authRoutes');
 const reportRoutes = require('./routes/reportRoutes');
@@ -55,13 +56,52 @@ const uploadsPath = process.env.VERCEL
 app.use('/uploads', express.static(uploadsPath));
 
 // Health Check Endpoint
-app.get('/api/health', (req, res) => {
+app.get('/api/health', async (req, res) => {
   const dbConfigured = !!process.env.DATABASE_URL || process.env.NODE_ENV !== 'production';
+  let dbStatus = 'untested';
+  let latencyMs = null;
+  let dbHostType = 'none';
+
+  if (process.env.DATABASE_URL) {
+    try {
+      const u = new URL(process.env.DATABASE_URL);
+      if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
+        dbHostType = 'localhost';
+      } else if (u.hostname.includes('neon.tech')) {
+        dbHostType = 'neon';
+      } else {
+        dbHostType = 'cloud_postgres';
+      }
+    } catch {
+      dbHostType = 'custom';
+    }
+  }
+
+  if (dbConfigured) {
+    try {
+      const { pool } = require('./db');
+      if (pool) {
+        const start = Date.now();
+        await pool.query('SELECT 1');
+        latencyMs = Date.now() - start;
+        dbStatus = 'connected';
+      } else {
+        dbStatus = 'pool_not_initialized';
+      }
+    } catch (err) {
+      dbStatus = 'error';
+      console.error('Health check database ping notice:', err.message);
+    }
+  }
+
   res.json({
     success: true,
     message: 'CivicFix API is running',
     environment: process.env.NODE_ENV || 'development',
-    database_configured: dbConfigured
+    database_configured: dbConfigured,
+    database_host_type: dbHostType,
+    database_status: dbStatus,
+    database_latency_ms: latencyMs
   });
 });
 
@@ -80,7 +120,7 @@ app.use('/api/*', (req, res) => {
 
 // Centralized Error Handling Middleware
 app.use((err, req, res, next) => {
-  console.error('Unhandled Application Error:', err);
+  console.error('Unhandled Application Error:', err?.message || err);
 
   // Handle Multer upload errors
   if (err.code === 'LIMIT_FILE_SIZE') {
@@ -98,9 +138,10 @@ app.use((err, req, res, next) => {
   }
 
   const statusCode = err.statusCode || 500;
+  const message = err.message || (statusCode === 500 ? 'Internal Server Error' : 'An error occurred');
   return res.status(statusCode).json({
     success: false,
-    message: err.message || 'Internal Server Error'
+    message
   });
 });
 
