@@ -35,16 +35,18 @@ function getActiveConnectionString() {
 
   // First priority: any variable starting with postgresql:// or postgres://
   for (const c of candidates) {
-    if (c.val && (c.val.startsWith('postgresql://') || c.val.startsWith('postgres://'))) {
-      return { name: c.name, connectionString: c.val, isInvalidWebUrl: false };
+    const val = c.val ? c.val.trim().replace(/^['"]|['"]$/g, '') : '';
+    if (val && (val.startsWith('postgresql://') || val.startsWith('postgres://'))) {
+      return { name: c.name, connectionString: val, isInvalidWebUrl: false };
     }
   }
 
   // Fallback: check if any variable was set (even if invalid web URL)
   for (const c of candidates) {
-    if (c.val) {
-      const isInvalid = c.val.startsWith('http://') || c.val.startsWith('https://') || c.val.includes('console.neon.tech');
-      return { name: c.name, connectionString: c.val, isInvalidWebUrl: isInvalid };
+    const val = c.val ? c.val.trim().replace(/^['"]|['"]$/g, '') : '';
+    if (val) {
+      const isInvalid = val.startsWith('http://') || val.startsWith('https://') || val.includes('console.neon.tech');
+      return { name: c.name, connectionString: val, isInvalidWebUrl: isInvalid };
     }
   }
 

@@ -69,9 +69,10 @@ app.get('/api/health', async (req, res) => {
   let isInvalidWebUrl = false;
 
   for (const c of candidates) {
-    if (c.val && (c.val.startsWith('postgresql://') || c.val.startsWith('postgres://'))) {
+    const val = c.val ? c.val.trim().replace(/^['"]|['"]$/g, '') : '';
+    if (val && (val.startsWith('postgresql://') || val.startsWith('postgres://'))) {
       resolvedDbVar = c.name;
-      activeConnectionString = c.val;
+      activeConnectionString = val;
       isInvalidWebUrl = false;
       break;
     }
@@ -79,10 +80,11 @@ app.get('/api/health', async (req, res) => {
 
   if (!activeConnectionString) {
     for (const c of candidates) {
-      if (c.val) {
+      const val = c.val ? c.val.trim().replace(/^['"]|['"]$/g, '') : '';
+      if (val) {
         resolvedDbVar = c.name;
-        activeConnectionString = c.val;
-        isInvalidWebUrl = c.val.startsWith('http://') || c.val.startsWith('https://') || c.val.includes('console.neon.tech');
+        activeConnectionString = val;
+        isInvalidWebUrl = val.startsWith('http://') || val.startsWith('https://') || val.includes('console.neon.tech');
         break;
       }
     }
